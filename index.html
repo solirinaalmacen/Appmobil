@@ -468,7 +468,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    simplemente no podrá leer el inventario en vivo del Sheet ni escribir
    el cierre allá — solo quedará guardado en Supabase.
 ===================================================================== */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEozRq-fQ6AYVSFgUdIgT9ca0_hiieq5684V2xpZevlUeJPwWTSDjl8TzFT90Zw82_/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRAL6pSvF34UJza5P-ZUSM-5J9n0TGorxHqohL4ndzN-EmhNxFfk7bAiYSQ0nEo_bz/exec";
 
 /* =====================================================================
    APP_LOGIN_EMAIL — correo de la ÚNICA cuenta de Supabase Auth que usa
@@ -616,7 +616,7 @@ function jsonpFetch(url){
     script.onerror = ()=>{ if(!terminado){ reject(new Error("No se pudo cargar el script JSONP")); limpiar(); } };
     script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cbName;
     document.body.appendChild(script);
-    setTimeout(()=>{ if(!terminado){ reject(new Error("Tiempo de espera agotado (15s)")); limpiar(); } }, 15000);
+    setTimeout(()=>{ if(!terminado){ reject(new Error("Tiempo de espera agotado (25s)")); limpiar(); } }, 25000);
   });
 }
 
