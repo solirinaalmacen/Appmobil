@@ -485,7 +485,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    simplemente no podrá leer el inventario en vivo del Sheet ni escribir
    el cierre allá — solo quedará guardado en Supabase.
 ===================================================================== */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzQRHnVufV7P_KQrg6IGMLVn7bNxlcKB3aK4ZwpWaGq-pkPuTnrS5-we0T7Bb9EpRgW/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJ3qGgP3OSAAqqgbWX0AxxK8QSB9XxmK4X_fohyJY-x4xlkAvg_pzj6UsnYtdn7EWu/exec";
 
 /* =====================================================================
    APP_LOGIN_EMAIL — correo de la ÚNICA cuenta de Supabase Auth que usa
@@ -1968,7 +1968,9 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
   const dia = Number(fecha.split("-")[2]);
   if(APPS_SCRIPT_URL && sheetIdHist){
     try{
-      const json = await jsonpFetch(`${APPS_SCRIPT_URL}?tipo=dia_historico&sheetId=${encodeURIComponent(sheetIdHist)}&dia=${dia}`);
+      const urlDia = `${APPS_SCRIPT_URL}?tipo=dia_historico&sheetId=${encodeURIComponent(sheetIdHist)}&dia=${dia}`;
+      console.log("Pidiendo día histórico:", urlDia);
+      const json = await jsonpFetch(urlDia);
       if(json.ok){
         const movimientosExcel = {};
         diagCatalogo.forEach(p=>{
