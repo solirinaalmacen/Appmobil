@@ -1979,7 +1979,7 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
           const m = t.match(/^\[(.+?)\]\s*(.*)$/);
           return m ? {origen:m[1], observacion:m[2]} : {origen:"Excel", observacion:t};
         });
-        diagFuenteExcel = { movimientos: movimientosExcel, cuadre: json.cuadre || {}, observaciones: obsExcel, pagos: json.pagos || [] };
+        diagFuenteExcel = { movimientos: movimientosExcel, cuadre: json.cuadre || {}, observaciones: obsExcel, pagos: json.pagos || [], ventaDelDiaExcel: json.venta_del_dia_excel };
       } else {
         console.warn("Excel en vivo no disponible para ese día:", json.error);
       }
@@ -2032,7 +2032,12 @@ function cambiarFuenteDiagnostico(fuente){
   if(!origen) return;
   diagFuenteActual = fuente;
   diagObservacionesData = JSON.parse(JSON.stringify(origen.observaciones));
-  diag = { movimientos: JSON.parse(JSON.stringify(origen.movimientos)), cuadre: JSON.parse(JSON.stringify(origen.cuadre)), pagos: JSON.parse(JSON.stringify(origen.pagos||[])) };
+  diag = {
+    movimientos: JSON.parse(JSON.stringify(origen.movimientos)),
+    cuadre: JSON.parse(JSON.stringify(origen.cuadre)),
+    pagos: JSON.parse(JSON.stringify(origen.pagos||[])),
+    ventaDelDiaExcel: origen.ventaDelDiaExcel || null // valor teórico oficial del Excel (si viene de esa fuente)
+  };
   document.getElementById("btnFuenteSupabase").classList.toggle("active-fuente", fuente==="supabase");
   document.getElementById("btnFuenteExcel").classList.toggle("active-fuente", fuente==="excel");
   renderDiagnostico();
@@ -2187,6 +2192,7 @@ function renderDiagnostico(){
   document.querySelectorAll(".diag-mov").forEach(inp=>{
     inp.addEventListener("input", e=>{
       diag.movimientos[e.target.dataset.id][e.target.dataset.campo] = Number(e.target.value||0);
+      diag.ventaDelDiaExcel = null; // al tocar un producto, el teórico pasa a calcularse en vivo con el cambio
       recalcularDiagnostico();
     });
   });
@@ -2227,10 +2233,15 @@ function recalcularDiagnostico(){
   const totalCaja = fisico + (c.addi||0) + (c.consignacion_envio||0) + (c.datafono_milagros||0) + (c.transferencia_milagros||0)
     + (c.gastos||0) + descMil + descOtros + regMil + regOtros + (c.danados||0) + (c.devoluciones||0) + (c.cambios||0)
     + (c.efectivo_apartado||0) - (c.base_dia||0);
-  const descuadre = totalCaja - valorTeorico;
+  // Mientras no se edite nada, se usa el valor teórico OFICIAL que ya
+  // trae el Excel (columna VENTA DEL DIA) — es el que de verdad usa tu
+  // Excel para calcular el descuadre. Apenas se simula un cambio en
+  // algún producto, se pasa a calcularlo en vivo con esos cambios.
+  const teoricoAUsar = (diag.ventaDelDiaExcel != null) ? diag.ventaDelDiaExcel : valorTeorico;
+  const descuadre = totalCaja - teoricoAUsar;
 
   document.getElementById("diag_fisico").textContent = fmt(fisico);
-  document.getElementById("diag_teorico").textContent = fmt(valorTeorico);
+  document.getElementById("diag_teorico").textContent = fmt(teoricoAUsar) + (diag.ventaDelDiaExcel != null ? " (oficial del Excel)" : " (recalculado)");
   document.getElementById("diag_total").textContent = fmt(totalCaja);
   const el = document.getElementById("diag_descuadre");
   el.textContent = fmt(descuadre);
