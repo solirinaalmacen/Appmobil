@@ -223,7 +223,7 @@
     <!-- PANTALLA 2: VENTAS NO FACTURADAS / DESCUENTOS / REGALOS -->
     <section id="screen2" class="screen hidden">
       <div class="card">
-        <h2>2 · Ventas en efectivo, descuentos y regalos</h2>
+        <h2>2 · Ventas en efectivo</h2>
         <div class="field">
           <input id="buscarProducto2" type="text" placeholder="🔍 Buscar producto...">
         </div>
@@ -235,7 +235,7 @@
     <!-- PANTALLA 3: DENOMINACIÓN DE CAJA -->
     <section id="screen3" class="screen hidden">
       <div class="card">
-        <h2>3 · Arqueo físico (efectivo)</h2>
+        <h2>5 · Caja — Arqueo físico (efectivo)</h2>
         <div id="denominacionGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
         <div class="total-line big"><span>Total físico contado</span><span id="lblEfectivoFisico">$0</span></div>
         <div class="field" style="margin-top:10px;">
@@ -298,7 +298,7 @@
     <!-- PANTALLA 4: IMPORTAR SIIGO -->
     <section id="screen4" class="screen hidden">
       <div class="card">
-        <h2>4 · Importar reporte Siigo (Excel)</h2>
+        <h2>4 · Siigo — Importar reporte (Excel)</h2>
         <p style="font-size:13px;color:var(--gray);margin-bottom:10px;">
           Sube el Excel exportado de Siigo. Se leerá localmente en tu celular y se
           cruzará con el catálogo usando la tabla de mapeo de nombres.
@@ -309,7 +309,7 @@
       </div>
 
       <div class="card">
-        <h2>Registrar salida manual</h2>
+        <h2>Registrar manual (salida, regalos, descuentos)</h2>
         <p style="font-size:12.5px;color:var(--gray);margin-bottom:8px;">
           Para productos que no aparecen en Siigo (o no cruzaron). Se
           SUMA a lo que ya tenga ese producto, no lo reemplaza.
@@ -322,7 +322,7 @@
     <!-- PANTALLA 5: OBSERVACIONES Y CIERRE -->
     <section id="screen5" class="screen hidden">
       <div class="card">
-        <h2>5 · Observaciones generadas</h2>
+        <h2>6 · Cierre — Observaciones generadas</h2>
         <div id="listaObservaciones"><p style="font-size:13px;color:var(--gray);">Sin observaciones automáticas todavía.</p></div>
         <button class="btn btn-gold btn-block" id="btnSubirObsPendientes" style="margin-top:10px;">📤 Subir observaciones al Excel</button>
         <div class="field" style="margin-top:10px;">
@@ -408,7 +408,7 @@
     <!-- PANTALLA 6: VENTAS POR TRANSFERENCIA / DÉBITO / CRÉDITO (a lo largo del día) -->
     <section id="screen6" class="screen hidden">
       <div class="card">
-        <h2>6 · Registrar venta con transferencia/tarjeta</h2>
+        <h2>3 · Recaudo — Ventas totales del día</h2>
         <p style="font-size:13px;color:var(--gray);margin-bottom:10px;">
           Anota aquí cada venta apenas ocurra, una por una. Se envía directo al Sheet (columnas Transferencias/Tarjeta Débito/Tarjeta Crédito).
         </p>
@@ -451,12 +451,12 @@
   <button id="fabEnviar" class="hidden" style="position:fixed;right:16px;bottom:78px;z-index:60;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;border:none;padding:12px 18px;border-radius:30px;font-weight:700;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.25);">⬆ Enviar</button>
 
   <nav class="bottom">
-    <button data-screen="1" class="navbtn active"><span class="dot">1</span>Apertura</button>
+    <button data-screen="1" class="navbtn active"><span class="dot">1</span>Inventario</button>
     <button data-screen="2" class="navbtn"><span class="dot">2</span>Ventas</button>
-    <button data-screen="3" class="navbtn"><span class="dot">3</span>Caja</button>
+    <button data-screen="6" class="navbtn"><span class="dot">💳</span>Recaudo</button>
     <button data-screen="4" class="navbtn"><span class="dot">4</span>Siigo</button>
-    <button data-screen="6" class="navbtn"><span class="dot">💳</span>Pagos</button>
-    <button data-screen="5" class="navbtn"><span class="dot">5</span>Cierre</button>
+    <button data-screen="3" class="navbtn"><span class="dot">5</span>Caja</button>
+    <button data-screen="5" class="navbtn"><span class="dot">6</span>Cierre</button>
   </nav>
 </div>
 
@@ -485,7 +485,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    simplemente no podrá leer el inventario en vivo del Sheet ni escribir
    el cierre allá — solo quedará guardado en Supabase.
 ===================================================================== */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJ3qGgP3OSAAqqgbWX0AxxK8QSB9XxmK4X_fohyJY-x4xlkAvg_pzj6UsnYtdn7EWu/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvTAFepsX670GbijINwaEoje2ZyXoLurwFof2OVtdv3-bhcglLOiAc_3X-O599rxO4/exec";
 
 /* =====================================================================
    APP_LOGIN_EMAIL — correo de la ÚNICA cuenta de Supabase Auth que usa
@@ -677,6 +677,7 @@ async function agregarObservacionAuto(origen, texto, automatica=true){
       if(resp && resp.ok){ item.sheetFila = resp.fila; item.sheetColumna = resp.columna; }
     }catch(e){ console.error("No se pudo escribir la observación en el Sheet:", e); }
   }
+  return item;
 }
 
 // Quita una observación de la lista (y de Supabase si ya se había guardado).
@@ -708,6 +709,19 @@ async function ensureReporte(){
   if(error){ toast("No se pudo iniciar el reporte: "+error.message); return null; }
   state.reporteId = data.id;
   return state.reporteId;
+}
+
+// Guarda solo en Supabase, sin enviar nada al Excel — para inventario_inicial,
+// que en el Excel real es una FÓRMULA (trae el INV. FINAL del día anterior).
+// Escribirle un número fijo ahí rompería esa fórmula para siempre.
+async function guardarMovimientoSoloSupabase(productoId, silencioso=false){
+  const reporteId = await ensureReporte();
+  if(!reporteId) return;
+  const mov = state.movimientos[productoId];
+  const {error} = await sb.from("movimientos_inventario")
+    .upsert({ reporte_id: reporteId, producto_id: productoId, ...mov }, {onConflict: "reporte_id,producto_id"});
+  if(error){ toast("Error guardando: "+error.message); return; }
+  if(!silencioso) toast("Guardado ✓");
 }
 
 async function guardarMovimiento(productoId, silencioso=false, campos=null){
@@ -978,7 +992,7 @@ async function cargarCatalogoYReporteDelDia(){
     state.movimientos[p.producto_id] = {
       inventario_inicial: inicial, inventario_real: null, entradas: 0,
       salidas_siigo: 0, regalos_entregados: 0, descuentos_aplicados: 0,
-      ventas_efectivo_no_facturadas: 0, observacion_producto: null
+      ventas_efectivo_no_facturadas: 0, descuentos_facturados: 0, observacion_producto: null
     };
   });
 
@@ -1107,7 +1121,7 @@ function renderInventarioInicial(){
     div.dataset.id = p.producto_id;
     div.innerHTML = `
       <div class="pname">${p.nombre_excel}</div>
-      <div class="psub">${p.categoria} · Teórico: <span class="teo">${mov.inventario_inicial}</span> uds</div>
+      <div class="psub">${p.categoria} · Teórico: <span class="teo">${mov.inventario_teorico_original ?? mov.inventario_inicial}</span> uds</div>
       <div class="row-btns">
         <button class="btn btn-green btn-ok" style="flex:1">✓ OK</button>
         <button class="btn btn-outline btn-mod" style="flex:1">Modificar</button>
@@ -1115,6 +1129,7 @@ function renderInventarioInicial(){
       <div class="${mov.inventario_real!=null ? '' : 'hidden'} modBox" style="margin-top:8px;display:flex;gap:8px;align-items:center;">
         <input type="number" class="mini-input inpReal" placeholder="Cantidad real" value="${mov.inventario_real ?? ''}">
         <button class="btn btn-gold btn-guardarMod">Guardar</button>
+        ${mov.inventario_real!=null ? '<button class="btn btn-red btn-cancelarMod">Cancelar</button>' : ''}
       </div>
       <div class="field" style="margin-top:8px;">
         <label>Entradas de mercancía hoy ${mov.entradas>0 ? `<span class="badge badge-ok">Hoy entraron: ${mov.entradas}</span>` : ""}</label>
@@ -1131,23 +1146,49 @@ function renderInventarioInicial(){
       div.classList.remove("edit"); div.classList.add("ok");
       div.querySelector(".modBox").classList.add("hidden");
       state.movimientos[p.producto_id].inventario_real = null;
-      guardarMovimiento(p.producto_id, false, ["inventario_inicial"]);
+      guardarMovimientoSoloSupabase(p.producto_id, false);
     });
     div.querySelector(".btn-mod").addEventListener("click", ()=>{
       div.classList.remove("ok"); div.classList.add("edit");
       div.querySelector(".modBox").classList.remove("hidden");
     });
-    div.querySelector(".btn-guardarMod").addEventListener("click", ()=>{
+    div.querySelector(".btn-guardarMod").addEventListener("click", async ()=>{
       const real = Number(div.querySelector(".inpReal").value || 0);
       if(!confirmar(`guardar ${real} unidades como cantidad real de ${p.nombre_excel}`)) return;
       const teorico = state.movimientos[p.producto_id].inventario_inicial;
+      state.movimientos[p.producto_id].inventario_teorico_original = teorico; // se guarda para poder deshacer
       state.movimientos[p.producto_id].inventario_real = real;
       state.movimientos[p.producto_id].inventario_inicial = real; // la cantidad real pasa a ser el inicial correcto
       const texto = `En producto ${p.nombre_excel} hay ${real} no ${teorico}`;
-      agregarObservacionAuto("Inventario", texto); // ya guarda la observación en Supabase y en el Sheet
-      guardarMovimiento(p.producto_id, false, ["inventario_inicial"]);
+      const obs = await agregarObservacionAuto("Inventario", texto); // ya guarda la observación en Supabase y en el Sheet
+      state.movimientos[p.producto_id].observacionModRef = obs; // para poder cancelar y borrarla después
+      guardarMovimientoSoloSupabase(p.producto_id, false);
       auditar("Inventario", `Modificó inventario inicial de ${p.nombre_excel} de ${teorico} a ${real}`);
+      renderInventarioInicial();
+      filtrarLista("listaInventarioInicial", document.getElementById("buscarProducto1").value);
     });
+    const btnCancelarMod = div.querySelector(".btn-cancelarMod");
+    if(btnCancelarMod){
+      btnCancelarMod.addEventListener("click", async ()=>{
+        if(!confirmar(`cancelar la modificación de ${p.nombre_excel} y volver al teórico`)) return;
+        const mov2 = state.movimientos[p.producto_id];
+        // Borra la observación (Supabase + celda del Sheet si ya se había escrito)
+        const obs = mov2.observacionModRef;
+        if(obs){
+          const idx = state.observacionesAuto.indexOf(obs);
+          if(idx > -1) await borrarObservacion(idx);
+        }
+        // Vuelve al valor teórico original
+        mov2.inventario_inicial = mov2.inventario_teorico_original ?? mov2.inventario_inicial;
+        mov2.inventario_real = null;
+        mov2.observacionModRef = null;
+        await guardarMovimientoSoloSupabase(p.producto_id, true);
+        auditar("Inventario", `Canceló la modificación de ${p.nombre_excel}, vuelve al teórico`);
+        toast("Modificación cancelada ✓");
+        renderInventarioInicial();
+        filtrarLista("listaInventarioInicial", document.getElementById("buscarProducto1").value);
+      });
+    }
     div.querySelector(".inpEntradas").addEventListener("input", e=>{
       state.movimientos[p.producto_id].entradas = Number(e.target.value || 0);
     });
@@ -1183,10 +1224,9 @@ function renderVentasManuales(){
     div.innerHTML = `
       <div class="pname">${p.nombre_excel}</div>
       <div class="psub">${p.categoria} · ${fmt(p.precio)}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-        <div><label style="font-size:11px;color:var(--gray);">Venta efvo.</label><input type="number" class="mini-input v-venta" value="0" style="width:100%"></div>
-        <div><label style="font-size:11px;color:var(--gray);">Regalos</label><input type="number" class="mini-input v-regalo" value="0" style="width:100%"></div>
-        <div><label style="font-size:11px;color:var(--gray);">Desc. $</label><input type="number" class="mini-input v-desc" value="0" style="width:100%"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div><label style="font-size:11px;color:var(--gray);">Venta efectivo</label><input type="number" class="mini-input v-venta" value="0" style="width:100%"></div>
+        <div><label style="font-size:11px;color:var(--gray);">Descuento $ (sobre esa venta)</label><input type="number" class="mini-input v-desc" value="0" style="width:100%"></div>
       </div>
       <button class="btn btn-outline btn-block btn-guardarVenta" style="margin-top:8px;">Guardar este producto</button>
     `;
@@ -1195,15 +1235,18 @@ function renderVentasManuales(){
     div.querySelector(".v-venta").addEventListener("input", e=>{
       mov.ventas_efectivo_no_facturadas = Number(e.target.value||0); recalcularCuadre();
     });
-    div.querySelector(".v-regalo").addEventListener("input", e=>{
-      mov.regalos_entregados = Number(e.target.value||0); recalcularCuadre();
-    });
     div.querySelector(".v-desc").addEventListener("input", e=>{
       mov.descuentos_aplicados = Number(e.target.value||0); recalcularCuadre();
     });
     div.querySelector(".btn-guardarVenta").addEventListener("click", async ()=>{
       if(!confirmar(`guardar los datos de venta de ${p.nombre_excel}`)) return;
-      await guardarMovimiento(p.producto_id, false, ["ventas_efectivo_no_facturadas","regalos_entregados","descuentos_aplicados"]);
+      // Solo se manda al Excel lo que de verdad se llenó — así no se
+      // pisa la otra celda con un 0 si solo se tocó una de las dos.
+      const campos = [];
+      if(mov.ventas_efectivo_no_facturadas > 0) campos.push("ventas_efectivo_no_facturadas");
+      if(mov.descuentos_aplicados > 0) campos.push("descuentos_aplicados");
+      if(campos.length === 0){ toast("No hay nada que guardar — escribe un valor primero"); return; }
+      await guardarMovimiento(p.producto_id, false, campos);
     });
   });
 }
@@ -1212,14 +1255,20 @@ document.getElementById("buscarProducto2").addEventListener("input", e=>{
 });
 
 document.getElementById("btnEnviarVentas").addEventListener("click", async ()=>{
-  if(!confirmar("enviar las ventas, regalos y descuentos registrados hasta ahora")) return;
+  if(!confirmar("enviar las ventas y descuentos en efectivo registrados hasta ahora")) return;
   const btn = document.getElementById("btnEnviarVentas");
   btn.disabled = true; btn.textContent = "Enviando...";
   const idsConDatos = Object.entries(state.movimientos)
-    .filter(([_, m]) => (m.ventas_efectivo_no_facturadas||0) > 0 || (m.regalos_entregados||0) > 0 || (m.descuentos_aplicados||0) > 0)
+    .filter(([_, m]) => (m.ventas_efectivo_no_facturadas||0) > 0 || (m.descuentos_aplicados||0) > 0)
     .map(([pid]) => pid);
-  for(const pid of idsConDatos){ await guardarMovimiento(pid, true); }
-  auditar("Ventas", `Envió ventas manuales/regalos/descuentos (${idsConDatos.length} productos con datos)`);
+  for(const pid of idsConDatos){
+    const m = state.movimientos[pid];
+    const campos = [];
+    if(m.ventas_efectivo_no_facturadas > 0) campos.push("ventas_efectivo_no_facturadas");
+    if(m.descuentos_aplicados > 0) campos.push("descuentos_aplicados");
+    await guardarMovimiento(pid, true, campos);
+  }
+  auditar("Ventas", `Envió ventas/descuentos en efectivo (${idsConDatos.length} productos con datos)`);
   btn.disabled = false; btn.textContent = "Enviar ventas";
   toast(idsConDatos.length ? "Ventas enviadas ✓" : "No había datos nuevos para enviar");
 });
@@ -1462,24 +1511,36 @@ let siigoUltimaImportacion = null; // guarda lo parseado hasta que se presione "
 function renderManualSalida(){
   const cont = document.getElementById("listaManualSalida");
   cont.innerHTML = state.catalogo.map(p=>`
-    <div class="product-row" style="display:flex;justify-content:space-between;align-items:center;gap:8px;" data-nombre="${p.nombre_excel.toLowerCase()}">
-      <div style="flex:1;font-size:13px;">${p.nombre_excel}</div>
-      <input type="number" class="mini-input inpManualSalida" data-id="${p.producto_id}" placeholder="0" style="width:70px;">
-      <button class="btn btn-outline btn-guardarManualSalida" data-id="${p.producto_id}" style="padding:6px 10px;font-size:12px;">Sumar</button>
+    <div class="product-row" data-nombre="${p.nombre_excel.toLowerCase()}">
+      <div class="pname" style="font-size:13px;">${p.nombre_excel}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px;">
+        <div><label style="font-size:10.5px;color:var(--gray);">Salida</label><input type="number" class="mini-input inpManualSalida" data-id="${p.producto_id}" placeholder="0" style="width:100%;"></div>
+        <div><label style="font-size:10.5px;color:var(--gray);">Regalos</label><input type="number" class="mini-input inpManualRegalo" data-id="${p.producto_id}" placeholder="0" style="width:100%;"></div>
+        <div><label style="font-size:10.5px;color:var(--gray);">Descuento $</label><input type="number" class="mini-input inpManualDescuento" data-id="${p.producto_id}" placeholder="0" style="width:100%;"></div>
+      </div>
+      <button class="btn btn-outline btn-block btn-guardarManualSalida" data-id="${p.producto_id}" style="margin-top:6px;">Sumar</button>
     </div>`).join("");
 
   cont.querySelectorAll(".btn-guardarManualSalida").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const pid = btn.dataset.id;
-      const input = cont.querySelector(`.inpManualSalida[data-id="${pid}"]`);
-      const cant = Number(input.value || 0);
-      if(cant <= 0){ toast("Escribe una cantidad mayor a 0"); return; }
+      const cantSalida = Number(cont.querySelector(`.inpManualSalida[data-id="${pid}"]`).value || 0);
+      const cantRegalo = Number(cont.querySelector(`.inpManualRegalo[data-id="${pid}"]`).value || 0);
+      const valDescuento = Number(cont.querySelector(`.inpManualDescuento[data-id="${pid}"]`).value || 0);
+      if(cantSalida<=0 && cantRegalo<=0 && valDescuento<=0){ toast("Escribe al menos un valor mayor a 0"); return; }
       const prod = state.catalogo.find(p=>p.producto_id===pid);
-      if(!confirmar(`sumar ${cant} unidades de salida manual a ${prod.nombre_excel}`)) return;
-      state.movimientos[pid].salidas_siigo = (state.movimientos[pid].salidas_siigo||0) + cant;
-      await guardarMovimiento(pid, false, ["salidas_siigo"]);
-      auditar("Siigo", `Registró salida manual de ${cant} en ${prod.nombre_excel}`);
-      input.value = "";
+      if(!confirmar(`sumar estos valores a ${prod.nombre_excel}`)) return;
+
+      const campos = [];
+      if(cantSalida > 0){ state.movimientos[pid].salidas_siigo = (state.movimientos[pid].salidas_siigo||0) + cantSalida; campos.push("salidas_siigo"); }
+      if(cantRegalo > 0){ state.movimientos[pid].regalos_entregados = (state.movimientos[pid].regalos_entregados||0) + cantRegalo; campos.push("regalos_entregados"); }
+      if(valDescuento > 0){ state.movimientos[pid].descuentos_facturados = (state.movimientos[pid].descuentos_facturados||0) + valDescuento; campos.push("descuentos_facturados"); }
+
+      await guardarMovimiento(pid, false, campos);
+      auditar("Siigo", `Registró manual en ${prod.nombre_excel}: salida ${cantSalida}, regalo ${cantRegalo}, descuento ${fmt(valDescuento)}`);
+      cont.querySelector(`.inpManualSalida[data-id="${pid}"]`).value = "";
+      cont.querySelector(`.inpManualRegalo[data-id="${pid}"]`).value = "";
+      cont.querySelector(`.inpManualDescuento[data-id="${pid}"]`).value = "";
     });
   });
 }
@@ -1965,8 +2026,17 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
   diagFuenteExcel = null;
 
   // --- Fuente 1 (la que manda): Excel en vivo — es lo que de verdad usan a diario ---
+  // OJO: el sheetId guardado en Supabase es siempre del archivo del MES
+  // ACTUAL (se actualiza cada mes). Si la fecha elegida es de otro mes,
+  // ese mismo sheetId apuntaría al archivo equivocado — y como los
+  // archivos tienen pestañas "1", "2", "3"... podría traer por error
+  // el día correcto pero DEL MES ACTUAL, no del mes que se pidió.
+  // Por eso, para meses distintos al de hoy, no se intenta leer el
+  // Excel en vivo — solo se muestra lo guardado en Supabase.
+  const hoy = fechaLocalHoy();
+  const esMesActual = fecha.slice(0,7) === hoy.slice(0,7);
   const dia = Number(fecha.split("-")[2]);
-  if(APPS_SCRIPT_URL && sheetIdHist){
+  if(esMesActual && APPS_SCRIPT_URL && sheetIdHist){
     try{
       const urlDia = `${APPS_SCRIPT_URL}?tipo=dia_historico&sheetId=${encodeURIComponent(sheetIdHist)}&dia=${dia}`;
       console.log("Pidiendo día histórico:", urlDia);
@@ -1975,7 +2045,7 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
         const movimientosExcel = {};
         diagCatalogo.forEach(p=>{
           const m = json.productos[p.nombre_excel];
-          movimientosExcel[p.producto_id] = m || {inventario_inicial:0, entradas:0, salidas_siigo:0, regalos_entregados:0, descuentos_aplicados:0, ventas_efectivo_no_facturadas:0};
+          movimientosExcel[p.producto_id] = m || {inventario_inicial:0, entradas:0, salidas_siigo:0, regalos_entregados:0, descuentos_aplicados:0, ventas_efectivo_no_facturadas:0, descuentos_facturados:0};
         });
         const obsExcel = (json.observaciones||[]).map(t=>{
           const m = t.match(/^\[(.+?)\]\s*(.*)$/);
@@ -1999,7 +2069,7 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
       sb.from("ventas_pago_individual").select("*").eq("reporte_id", reporte.id)
     ]);
     const movimientosSupabase = {};
-    diagCatalogo.forEach(p=>{ movimientosSupabase[p.producto_id] = {inventario_inicial:0, entradas:0, salidas_siigo:0, regalos_entregados:0, descuentos_aplicados:0, ventas_efectivo_no_facturadas:0}; });
+    diagCatalogo.forEach(p=>{ movimientosSupabase[p.producto_id] = {inventario_inicial:0, entradas:0, salidas_siigo:0, regalos_entregados:0, descuentos_aplicados:0, ventas_efectivo_no_facturadas:0, descuentos_facturados:0}; });
     (movs||[]).forEach(m=>{ if(movimientosSupabase[m.producto_id]) movimientosSupabase[m.producto_id] = {...movimientosSupabase[m.producto_id], ...m}; });
     const obsSupabase = (obsGuardadas||[]).map(o=>({origen:o.origen, observacion:o.observacion}));
     diagFuenteSupabase = { movimientos: movimientosSupabase, cuadre: cuadreGuardado || {}, observaciones: obsSupabase, pagos: pagosGuardados || [] };
@@ -2008,13 +2078,15 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
   btn.disabled = false; btn.textContent = "Buscar ese día";
 
   if(!diagFuenteExcel && !diagFuenteSupabase){
-    toast("No encontré datos de ese día ni en el Excel ni en Supabase — revisa el punto/fecha, o que exista la pestaña de ese día.");
+    const razon = !esMesActual ? " (es de un mes distinto al actual, así que no se puede leer en vivo del Excel de ese mes — y tampoco hay nada guardado en Supabase para esa fecha)" : "";
+    toast("No encontré datos de ese día"+razon+".");
     return;
   }
 
   document.getElementById("btnFuenteExcel").classList.toggle("hidden", !diagFuenteExcel);
   document.getElementById("btnFuenteSupabase").classList.toggle("hidden", !diagFuenteSupabase);
-  if(!diagFuenteSupabase) toast("No hay nada guardado en Supabase ese día (normal si todavía no se usaba la app) — mostrando el Excel.");
+  if(!esMesActual && !diagFuenteExcel) toast("Esa fecha es de un mes anterior — el archivo de ese mes ya no está vinculado, así que solo se muestra lo guardado en Supabase.");
+  else if(!diagFuenteSupabase) toast("No hay nada guardado en Supabase ese día (normal si todavía no se usaba la app) — mostrando el Excel.");
 
   cambiarFuenteDiagnostico(diagFuenteExcel ? "excel" : "supabase");
 
@@ -2102,7 +2174,7 @@ document.getElementById("btnReiniciarDia").addEventListener("click", async ()=>{
       state.movimientos[pid] = {
         inventario_inicial: 0, inventario_real: null, entradas: 0,
         salidas_siigo: 0, regalos_entregados: 0, descuentos_aplicados: 0,
-        ventas_efectivo_no_facturadas: 0, observacion_producto: null
+        ventas_efectivo_no_facturadas: 0, descuentos_facturados: 0, observacion_producto: null
       };
     });
     state.cuadre = { base_dia: state.cuadre.base_dia }; // conserva la base (es fórmula, se sigue leyendo igual)
