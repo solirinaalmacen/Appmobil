@@ -84,7 +84,7 @@
   }
   .product-row .pname{font-weight:600;font-size:14px;margin-bottom:6px;}
   .product-row .psub{font-size:12px;color:var(--gray);margin-bottom:8px;}
-  .product-row.ok{border-color:var(--green);}
+  .product-row.ok{border-color:var(--green);background:#d7f4e2;}
   .product-row.edit{border-color:var(--gold);}
   .mini-input{width:90px;padding:8px;border:1px solid var(--border);border-radius:6px;}
 
@@ -174,7 +174,8 @@
 
 <!-- ============== APP PRINCIPAL ============== -->
 <div id="appRoot" class="hidden">
-  <header class="topbar">
+  <header class="topbar" style="position:relative;">
+    <div id="dotConexion" title="Estado de conexión" style="position:absolute;top:10px;right:10px;width:14px;height:14px;border-radius:50%;background:#2e7d4f;box-shadow:0 0 6px rgba(0,0,0,.4);z-index:5;"></div>
     <div class="brand">MILAGROS</div>
     <div class="row">
       <input id="inpAsesora" type="text" placeholder="Nombre asesora">
@@ -261,7 +262,7 @@
 
       <div class="card">
         <h2>Movimientos especiales</h2>
-        <div class="field"><label>Efectivo apartado (antes "Pagos")</label><input type="number" id="inp_efectivo_apartado" value="0"></div>
+        <div class="total-line"><span>Efectivo apartado (antes "Pagos")</span><span id="lbl_efectivo_apartado_calc">$0</span></div>
         <div class="field">
           <label>Base del día (se lee sola del Sheet, no se digita)</label>
           <input type="number" id="inp_base_dia" value="0" readonly style="background:#f0ece0;color:var(--gray);">
@@ -485,7 +486,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    simplemente no podrá leer el inventario en vivo del Sheet ni escribir
    el cierre allá — solo quedará guardado en Supabase.
 ===================================================================== */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvTAFepsX670GbijINwaEoje2ZyXoLurwFof2OVtdv3-bhcglLOiAc_3X-O599rxO4/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8epq4WELtqFfCY1J0jEwYFj5I9c0ZUTZI5qDEJBxWllQEmdaKC27wd-ZnoWqQK_RD/exec";
 
 /* =====================================================================
    APP_LOGIN_EMAIL — correo de la ÚNICA cuenta de Supabase Auth que usa
@@ -567,10 +568,26 @@ function guardarColaLocal(cola){
 function actualizarIndicadorPendientes(){
   const n = cargarColaLocal().length;
   const el = document.getElementById("indicadorPendientes");
-  if(!el) return;
-  el.classList.toggle("hidden", n === 0);
-  el.textContent = `⏳ ${n} pendiente(s) de sincronizar`;
+  if(el){
+    el.classList.toggle("hidden", n === 0);
+    el.textContent = `⏳ ${n} pendiente(s) de sincronizar`;
+  }
+  actualizarSemaforoConexion(n);
 }
+
+// Semáforo verde/rojo en la esquina — verde = todo sincronizado y con
+// internet; rojo = sin internet o con algo pendiente de enviar.
+function actualizarSemaforoConexion(nPendientes){
+  const dot = document.getElementById("dotConexion");
+  if(!dot) return;
+  const n = nPendientes != null ? nPendientes : cargarColaLocal().length;
+  const ok = navigator.onLine && n === 0;
+  dot.style.background = ok ? "#2e7d4f" : "#c0392b";
+  dot.title = ok ? "Conectado — todo sincronizado" : (!navigator.onLine ? "Sin internet" : `${n} pendiente(s) de sincronizar`);
+}
+window.addEventListener("online", ()=>actualizarSemaforoConexion());
+window.addEventListener("offline", ()=>actualizarSemaforoConexion());
+setInterval(()=>actualizarSemaforoConexion(), 15000); // revisión activa cada 15s, por si algo cambió en silencio
 
 async function registrarErrorLog(contexto, detalle, mensajeError){
   try{
@@ -837,15 +854,24 @@ async function cargarPuntos(){
 
 // Al elegir el punto (antes de dar "Ingresar"), si el Sheet ya tiene un
 // nombre de asesora escrito hoy, se prellena — pero sigue editable.
+let ultimaSolicitudAsesora = 0; // evita que una respuesta atrasada de OTRO punto sobreescriba lo que ya se ve
+
 document.getElementById("selPunto").addEventListener("change", async (e)=>{
   const sheetId = e.target.options[e.target.selectedIndex]?.dataset.sheetid;
   const campoAsesora = document.getElementById("inpAsesoraInicial");
+  const miSolicitud = ++ultimaSolicitudAsesora; // "número de turno" de esta petición
   campoAsesora.value = "";
   campoAsesora.placeholder = "Ej: Lorena Gómez";
   cacheResultadoVivo = null; cacheResultadoVivoSheetId = null; // cambió el punto, el caché ya no sirve
   if(!APPS_SCRIPT_URL || !sheetId){ return; }
   campoAsesora.placeholder = "Buscando nombre ya escrito hoy...";
   const resultado = await obtenerInventarioEnVivo(sheetId); // esta llamada queda en caché y se reusa al dar "Ingresar"
+  if(miSolicitud !== ultimaSolicitudAsesora){
+    // mientras esperábamos, la asesora ya cambió de punto otra vez —
+    // esta respuesta quedó vieja/atrasada, se ignora para no pisar lo
+    // que se está mostrando del punto que sí eligió al final.
+    return;
+  }
   if(resultado && resultado.asesora){
     campoAsesora.value = resultado.asesora;
   }
@@ -874,6 +900,16 @@ document.getElementById("btnEntrar").addEventListener("click", async ()=>{
 
   await cargarCatalogoYReporteDelDia();
 
+  // Guarda el nombre en el Excel de una vez al entrar (antes solo se
+  // guardaba hasta que se enviara la caja) — así queda registrado quién
+  // está en el punto desde el primer momento.
+  if(APPS_SCRIPT_URL && state.puntoSheetId){
+    enviarConReintento("cuadre_parcial", "Nombre de asesora", APPS_SCRIPT_URL, {
+      method: "POST", mode: "no-cors",
+      body: JSON.stringify({ accion: "cuadre_parcial", sheetId: state.puntoSheetId, cuadre: { asesora: state.asesora } })
+    });
+  }
+
   document.getElementById("lockScreen").classList.add("hidden");
   document.getElementById("appRoot").classList.remove("hidden");
   actualizarBotonFlotante(1);
@@ -899,12 +935,16 @@ async function actualizarMediosDePagoCalculados(resultadoVivoYaObtenido){
   const resultado = resultadoVivoYaObtenido || await obtenerInventarioEnVivo();
   const transf = (resultado && resultado.transferencias_calculadas) || 0;
   const tarj = (resultado && resultado.tarjetas_calculadas) || 0;
+  const efvoApartado = (resultado && resultado.efectivo_apartado_calculado) || 0;
   state.cuadre.transferencia_milagros = transf;
   state.cuadre.datafono_milagros = tarj;
+  state.cuadre.efectivo_apartado = efvoApartado;
   const elT = document.getElementById("lbl_transferencias_calc");
   const elJ = document.getElementById("lbl_tarjetas_calc");
+  const elE = document.getElementById("lbl_efectivo_apartado_calc");
   if(elT) elT.textContent = fmt(transf);
   if(elJ) elJ.textContent = fmt(tarj);
+  if(elE) elE.textContent = fmt(efvoApartado);
   recalcularCuadre();
 }
 
@@ -924,7 +964,8 @@ async function obtenerInventarioEnVivo(sheetIdForzado){
     if(!json.ok){ toast("No se pudo leer el inventario del Sheet: "+json.error); return null; }
     const resultado = {
       inventario: json.inventario, base_dia: json.base_dia || 0, asesora: json.asesora || "",
-      transferencias_calculadas: json.transferencias_calculadas || 0, tarjetas_calculadas: json.tarjetas_calculadas || 0
+      transferencias_calculadas: json.transferencias_calculadas || 0, tarjetas_calculadas: json.tarjetas_calculadas || 0,
+      efectivo_apartado_calculado: json.efectivo_apartado_calculado || 0
     };
     cacheResultadoVivo = resultado; cacheResultadoVivoSheetId = sheetId;
     return resultado;
@@ -1056,7 +1097,7 @@ function precargarCamposCuadre(){
     const el = document.querySelector(`.denom-input[data-key="${d.key}"]`);
     if(el && c[d.key]!=null) el.value = c[d.key];
   });
-  ["addi","consignacion_envio","efectivo_apartado","gastos","danados","devoluciones","cambios","sencillo_recibido"].forEach(k=>{
+  ["addi","consignacion_envio","gastos","danados","devoluciones","cambios","sencillo_recibido"].forEach(k=>{
     const el = document.getElementById("inp_"+k);
     if(el && c[k]!=null) el.value = c[k];
   });
@@ -1141,16 +1182,29 @@ function renderInventarioInicial(){
     `;
     cont.appendChild(div);
 
-    div.querySelector(".btn-ok").addEventListener("click", ()=>{
+    div.querySelector(".btn-ok").addEventListener("click", async ()=>{
       if(!confirmar(`confirmar que ${p.nombre_excel} coincide con el teórico`)) return;
       div.classList.remove("edit"); div.classList.add("ok");
       div.querySelector(".modBox").classList.add("hidden");
       state.movimientos[p.producto_id].inventario_real = null;
       guardarMovimientoSoloSupabase(p.producto_id, false);
+      if(APPS_SCRIPT_URL && state.puntoSheetId){
+        await enviarConReintento("marcar_ok", p.nombre_excel, APPS_SCRIPT_URL, {
+          method: "POST", mode: "no-cors",
+          body: JSON.stringify({ accion: "marcar_ok", sheetId: state.puntoSheetId, nombre_excel: p.nombre_excel })
+        });
+      }
     });
-    div.querySelector(".btn-mod").addEventListener("click", ()=>{
+    div.querySelector(".btn-mod").addEventListener("click", async ()=>{
       div.classList.remove("ok"); div.classList.add("edit");
       div.querySelector(".modBox").classList.remove("hidden");
+      // si venía de un "OK" previo, quita el color verde del Excel al volver a editar
+      if(APPS_SCRIPT_URL && state.puntoSheetId){
+        await enviarConReintento("marcar_ok", p.nombre_excel, APPS_SCRIPT_URL, {
+          method: "POST", mode: "no-cors",
+          body: JSON.stringify({ accion: "marcar_ok", sheetId: state.puntoSheetId, nombre_excel: p.nombre_excel, quitar: true })
+        });
+      }
     });
     div.querySelector(".btn-guardarMod").addEventListener("click", async ()=>{
       const real = Number(div.querySelector(".inpReal").value || 0);
@@ -1314,7 +1368,7 @@ const LABEL_MOVIMIENTO = {
 };
 let ultimoValorObservado = {}; // evita duplicar la misma observación si no cambió el valor
 
-["addi","consignacion_envio","efectivo_apartado","gastos","danados","devoluciones","cambios","sencillo_recibido"].forEach(key=>{
+["addi","consignacion_envio","gastos","danados","devoluciones","cambios","sencillo_recibido"].forEach(key=>{
   document.getElementById("inp_"+key).addEventListener("input", e=>{
     state.cuadre[key] = Number(e.target.value||0);
     const obsBox = document.getElementById("obsBox_"+key);
@@ -1325,10 +1379,10 @@ let ultimoValorObservado = {}; // evita duplicar la misma observación si no cam
   });
 });
 
-// addi / consignación / efectivo apartado: no tienen textarea propia,
-// así que la observación automática se genera sola al salir del campo
-// (blur), usando el valor como texto.
-["addi","consignacion_envio","efectivo_apartado"].forEach(key=>{
+// addi / consignación: no tienen textarea propia, así que la
+// observación automática se genera sola al salir del campo (blur),
+// usando el valor como texto.
+["addi","consignacion_envio"].forEach(key=>{
   document.getElementById("inp_"+key).addEventListener("blur", e=>{
     const valor = state.cuadre[key] || 0;
     if(valor > 0 && ultimoValorObservado[key] !== valor){
@@ -1472,14 +1526,15 @@ async function construirMapeoSiigo(){
         let sinCatalogo = [];
         json.mapeo.forEach(fila=>{
           // TRIM en las columnas, tal como pediste, para que espacios
-          // de más en el Sheet no rompan el cruce. Se intenta primero
-          // con el nombre ANTIGUO (el que coincide con el catálogo real
-          // de hoy); si no hay, se usa el nombre nuevo.
-          const nombreExcel = String(fila.nombre_excel_antiguo || fila.nombre_excel || "").trim().toLowerCase();
+          // de más en el Sheet no rompan el cruce. El catálogo (desde
+          // el rebuild con los nombres oficiales de Siigo) usa el
+          // nombre ACTUAL — se intenta primero ese, y el antiguo solo
+          // como respaldo por si algún producto no se migró todavía.
+          const nombreExcel = String(fila.nombre_excel || fila.nombre_excel_antiguo || "").trim().toLowerCase();
           const nombreSiigo = String(fila.nombre_siigo||"").trim().toLowerCase();
           const codigoSiigo = String(fila.codigo_siigo||"").trim().toUpperCase();
           const prod = state.catalogo.find(p=>p.nombre_excel.trim().toLowerCase() === nombreExcel);
-          if(!prod){ sinCatalogo.push(fila.nombre_excel_antiguo || fila.nombre_excel); return; } // ese nombre_excel del Sheet no existe (aún) en el catálogo activo
+          if(!prod){ sinCatalogo.push(fila.nombre_excel || fila.nombre_excel_antiguo); return; } // ese nombre_excel del Sheet no existe (aún) en el catálogo activo
           if(codigoSiigo) mapPorCodigo[codigoSiigo] = prod.producto_id;
           if(nombreSiigo) mapPorNombre[nombreSiigo] = prod.producto_id;
         });
