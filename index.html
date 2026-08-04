@@ -1958,34 +1958,13 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
   const btn = document.getElementById("btnBuscarHistorial");
   btn.disabled = true; btn.textContent = "Buscando...";
 
-  const {data: reporte} = await sb.from("reportes_diarios").select("*")
-    .eq("punto_id", puntoId).eq("fecha", fecha).maybeSingle();
-  if(!reporte){
-    toast("No hay ningún reporte guardado ese día para ese punto");
-    btn.disabled = false; btn.textContent = "Buscar ese día";
-    return;
-  }
-
-  const [{data: catalogo}, {data: movs}, {data: cuadreGuardado}, {data: obsGuardadas}, {data: pagosGuardados}] = await Promise.all([
-    sb.from("vista_catalogo_por_punto").select("*").eq("punto_id", puntoId),
-    sb.from("movimientos_inventario").select("*").eq("reporte_id", reporte.id),
-    sb.from("cuadre_caja").select("*").eq("reporte_id", reporte.id).maybeSingle(),
-    sb.from("observaciones_reporte").select("*").eq("reporte_id", reporte.id).order("creado_en"),
-    sb.from("ventas_pago_individual").select("*").eq("reporte_id", reporte.id)
-  ]);
-
+  const {data: catalogo} = await sb.from("vista_catalogo_por_punto").select("*").eq("punto_id", puntoId);
   diagCatalogo = catalogo || [];
   diagSoloLectura = true;
-
-  // --- Fuente 1: Supabase (lo que quedó guardado al finalizar el día) ---
-  const movimientosSupabase = {};
-  diagCatalogo.forEach(p=>{ movimientosSupabase[p.producto_id] = {inventario_inicial:0, entradas:0, salidas_siigo:0, regalos_entregados:0, descuentos_aplicados:0, ventas_efectivo_no_facturadas:0}; });
-  (movs||[]).forEach(m=>{ if(movimientosSupabase[m.producto_id]) movimientosSupabase[m.producto_id] = {...movimientosSupabase[m.producto_id], ...m}; });
-  const obsSupabase = (obsGuardadas||[]).map(o=>({origen:o.origen, observacion:o.observacion}));
-  diagFuenteSupabase = { movimientos: movimientosSupabase, cuadre: cuadreGuardado || {}, observaciones: obsSupabase, pagos: pagosGuardados || [] };
-
-  // --- Fuente 2: Excel en vivo (por si la encargada cambió algo directo ahí después) ---
+  diagFuenteSupabase = null;
   diagFuenteExcel = null;
+
+  // --- Fuente 1 (la que manda): Excel en vivo — es lo que de verdad usan a diario ---
   const dia = Number(fecha.split("-")[2]);
   if(APPS_SCRIPT_URL && sheetIdHist){
     try{
@@ -2001,17 +1980,41 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
           return m ? {origen:m[1], observacion:m[2]} : {origen:"Excel", observacion:t};
         });
         diagFuenteExcel = { movimientos: movimientosExcel, cuadre: json.cuadre || {}, observaciones: obsExcel, pagos: json.pagos || [] };
+      } else {
+        console.warn("Excel en vivo no disponible para ese día:", json.error);
       }
     }catch(e){ console.error("No se pudo leer el Excel en vivo de ese día:", e); }
   }
 
-  document.getElementById("btnFuenteSupabase").classList.remove("hidden");
-  document.getElementById("btnFuenteExcel").classList.toggle("hidden", !diagFuenteExcel);
-  if(!diagFuenteExcel) toast("Ese día no se pudo leer en vivo del Excel (puede ser de un mes anterior, o no hay conexión) — se muestra solo lo guardado en Supabase.");
-
-  cambiarFuenteDiagnostico("supabase");
+  // --- Fuente 2 (extra, si existe): lo que quedó guardado en Supabase ---
+  const {data: reporte} = await sb.from("reportes_diarios").select("*")
+    .eq("punto_id", puntoId).eq("fecha", fecha).maybeSingle();
+  if(reporte){
+    const [{data: movs}, {data: cuadreGuardado}, {data: obsGuardadas}, {data: pagosGuardados}] = await Promise.all([
+      sb.from("movimientos_inventario").select("*").eq("reporte_id", reporte.id),
+      sb.from("cuadre_caja").select("*").eq("reporte_id", reporte.id).maybeSingle(),
+      sb.from("observaciones_reporte").select("*").eq("reporte_id", reporte.id).order("creado_en"),
+      sb.from("ventas_pago_individual").select("*").eq("reporte_id", reporte.id)
+    ]);
+    const movimientosSupabase = {};
+    diagCatalogo.forEach(p=>{ movimientosSupabase[p.producto_id] = {inventario_inicial:0, entradas:0, salidas_siigo:0, regalos_entregados:0, descuentos_aplicados:0, ventas_efectivo_no_facturadas:0}; });
+    (movs||[]).forEach(m=>{ if(movimientosSupabase[m.producto_id]) movimientosSupabase[m.producto_id] = {...movimientosSupabase[m.producto_id], ...m}; });
+    const obsSupabase = (obsGuardadas||[]).map(o=>({origen:o.origen, observacion:o.observacion}));
+    diagFuenteSupabase = { movimientos: movimientosSupabase, cuadre: cuadreGuardado || {}, observaciones: obsSupabase, pagos: pagosGuardados || [] };
+  }
 
   btn.disabled = false; btn.textContent = "Buscar ese día";
+
+  if(!diagFuenteExcel && !diagFuenteSupabase){
+    toast("No encontré datos de ese día ni en el Excel ni en Supabase — revisa el punto/fecha, o que exista la pestaña de ese día.");
+    return;
+  }
+
+  document.getElementById("btnFuenteExcel").classList.toggle("hidden", !diagFuenteExcel);
+  document.getElementById("btnFuenteSupabase").classList.toggle("hidden", !diagFuenteSupabase);
+  if(!diagFuenteSupabase) toast("No hay nada guardado en Supabase ese día (normal si todavía no se usaba la app) — mostrando el Excel.");
+
+  cambiarFuenteDiagnostico(diagFuenteExcel ? "excel" : "supabase");
 
   document.getElementById("lockScreen").classList.add("hidden");
   document.getElementById("appRoot").classList.remove("hidden");
