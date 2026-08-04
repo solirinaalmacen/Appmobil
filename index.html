@@ -385,6 +385,11 @@
       </div>
 
       <div class="card">
+        <h2>Pagos registrados (transferencias/débito/crédito/efectivo)</h2>
+        <div id="diagPagos"></div>
+      </div>
+
+      <div class="card">
         <h2>Observaciones del día</h2>
         <div id="diagObservaciones"></div>
       </div>
@@ -1961,11 +1966,12 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
     return;
   }
 
-  const [{data: catalogo}, {data: movs}, {data: cuadreGuardado}, {data: obsGuardadas}] = await Promise.all([
+  const [{data: catalogo}, {data: movs}, {data: cuadreGuardado}, {data: obsGuardadas}, {data: pagosGuardados}] = await Promise.all([
     sb.from("vista_catalogo_por_punto").select("*").eq("punto_id", puntoId),
     sb.from("movimientos_inventario").select("*").eq("reporte_id", reporte.id),
     sb.from("cuadre_caja").select("*").eq("reporte_id", reporte.id).maybeSingle(),
-    sb.from("observaciones_reporte").select("*").eq("reporte_id", reporte.id).order("creado_en")
+    sb.from("observaciones_reporte").select("*").eq("reporte_id", reporte.id).order("creado_en"),
+    sb.from("ventas_pago_individual").select("*").eq("reporte_id", reporte.id)
   ]);
 
   diagCatalogo = catalogo || [];
@@ -1976,7 +1982,7 @@ document.getElementById("btnBuscarHistorial").addEventListener("click", async ()
   diagCatalogo.forEach(p=>{ movimientosSupabase[p.producto_id] = {inventario_inicial:0, entradas:0, salidas_siigo:0, regalos_entregados:0, descuentos_aplicados:0, ventas_efectivo_no_facturadas:0}; });
   (movs||[]).forEach(m=>{ if(movimientosSupabase[m.producto_id]) movimientosSupabase[m.producto_id] = {...movimientosSupabase[m.producto_id], ...m}; });
   const obsSupabase = (obsGuardadas||[]).map(o=>({origen:o.origen, observacion:o.observacion}));
-  diagFuenteSupabase = { movimientos: movimientosSupabase, cuadre: cuadreGuardado || {}, observaciones: obsSupabase };
+  diagFuenteSupabase = { movimientos: movimientosSupabase, cuadre: cuadreGuardado || {}, observaciones: obsSupabase, pagos: pagosGuardados || [] };
 
   // --- Fuente 2: Excel en vivo (por si la encargada cambió algo directo ahí después) ---
   diagFuenteExcel = null;
@@ -2023,7 +2029,7 @@ function cambiarFuenteDiagnostico(fuente){
   if(!origen) return;
   diagFuenteActual = fuente;
   diagObservacionesData = JSON.parse(JSON.stringify(origen.observaciones));
-  diag = { movimientos: JSON.parse(JSON.stringify(origen.movimientos)), cuadre: JSON.parse(JSON.stringify(origen.cuadre)) };
+  diag = { movimientos: JSON.parse(JSON.stringify(origen.movimientos)), cuadre: JSON.parse(JSON.stringify(origen.cuadre)), pagos: JSON.parse(JSON.stringify(origen.pagos||[])) };
   document.getElementById("btnFuenteSupabase").classList.toggle("active-fuente", fuente==="supabase");
   document.getElementById("btnFuenteExcel").classList.toggle("active-fuente", fuente==="excel");
   renderDiagnostico();
@@ -2037,7 +2043,8 @@ function iniciarDiagnostico(){
   diagSoloLectura = false;
   diag = {
     movimientos: JSON.parse(JSON.stringify(state.movimientos)),
-    cuadre: JSON.parse(JSON.stringify(state.cuadre))
+    cuadre: JSON.parse(JSON.stringify(state.cuadre)),
+    pagos: JSON.parse(JSON.stringify(state.pagosIndividuales||[]))
   };
   renderDiagnostico();
 }
@@ -2112,13 +2119,19 @@ document.getElementById("btnReiniciarDiagnostico").addEventListener("click", ()=
   iniciarDiagnostico();
 });
 document.getElementById("btnVolverDeDiagnostico").addEventListener("click", ()=>{
+  console.log("btnVolverDeDiagnostico clickeado, diagSoloLectura =", diagSoloLectura);
   if(diagSoloLectura){
-    document.querySelector("nav.bottom").classList.remove("hidden");
+    // Reset incondicional (no depende de que otras pantallas hayan
+    // quedado en el estado "esperado" — siempre fuerza volver al inicio).
+    document.querySelectorAll("nav.bottom").forEach(n=>n.classList.remove("hidden"));
     document.getElementById("appRoot").classList.add("hidden");
     document.getElementById("lockScreen").classList.remove("hidden");
+    document.getElementById("bloqueLogin").classList.add("hidden");
     document.getElementById("bloqueHistorial").classList.add("hidden");
     document.getElementById("bloqueDatosDia").classList.remove("hidden");
     document.getElementById("btnAbrirHistorial").classList.remove("hidden");
+    diagSoloLectura = false;
+    console.log("Reset del historial ejecutado.");
   } else {
     irAPantalla(5);
   }
@@ -2174,6 +2187,13 @@ function renderDiagnostico(){
       recalcularDiagnostico();
     });
   });
+
+  // --- Pagos individuales (transferencia/débito/crédito/efectivo) ---
+  const ETIQUETA_TIPO_PAGO_DIAG = {transferencia:"Transferencia", debito:"Tarjeta débito", credito:"Tarjeta crédito", efectivo:"Efectivo"};
+  const pagosDelDia = (diag && diag.pagos) || [];
+  document.getElementById("diagPagos").innerHTML = pagosDelDia.length
+    ? pagosDelDia.map(p=>`<div class="total-line"><span>${ETIQUETA_TIPO_PAGO_DIAG[p.tipo]||p.tipo}${p.subtipo ? " ("+p.subtipo+")" : ""}</span><span>${fmt(p.valor)}</span></div>`).join("")
+    : `<p style="font-size:13px;color:var(--gray);">Sin pagos individuales registrados.</p>`;
 
   // --- Observaciones (solo lectura, para tener el contexto completo) ---
   document.getElementById("diagObservaciones").innerHTML = diagObservacionesData.length
