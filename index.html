@@ -312,8 +312,9 @@
       <div class="card">
         <h2>Registrar manual (salida, regalos, descuentos)</h2>
         <p style="font-size:12.5px;color:var(--gray);margin-bottom:8px;">
-          Para productos que no aparecen en Siigo (o no cruzaron). Se
-          SUMA a lo que ya tenga ese producto, no lo reemplaza.
+          Para productos que no aparecen en Siigo (o no cruzaron). Cada
+          campo muestra el TOTAL que ya hay guardado hoy — escribe el
+          total correcto y dale Guardar (reemplaza el número, no lo suma).
         </p>
         <input id="buscarManualSalida" type="text" placeholder="🔍 Buscar producto..." style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
         <div id="listaManualSalida"></div>
@@ -486,7 +487,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    simplemente no podrá leer el inventario en vivo del Sheet ni escribir
    el cierre allá — solo quedará guardado en Supabase.
 ===================================================================== */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8epq4WELtqFfCY1J0jEwYFj5I9c0ZUTZI5qDEJBxWllQEmdaKC27wd-ZnoWqQK_RD/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxdZoSOYqNNkWNz35YBvnEns9oNthIfbW2btA8OFib1k0yA-981wEB2op8GoQQ9D79e/exec";
 
 /* =====================================================================
    APP_LOGIN_EMAIL — correo de la ÚNICA cuenta de Supabase Auth que usa
@@ -1158,7 +1159,7 @@ function renderInventarioInicial(){
   state.catalogo.forEach(p=>{
     const mov = state.movimientos[p.producto_id];
     const div = document.createElement("div");
-    div.className = mov.inventario_real!=null ? "product-row edit" : "product-row ok";
+    div.className = mov.inventario_real!=null ? "product-row edit" : (mov.confirmado_ok ? "product-row ok" : "product-row");
     div.dataset.id = p.producto_id;
     div.innerHTML = `
       <div class="pname">${p.nombre_excel}</div>
@@ -1187,6 +1188,7 @@ function renderInventarioInicial(){
       div.classList.remove("edit"); div.classList.add("ok");
       div.querySelector(".modBox").classList.add("hidden");
       state.movimientos[p.producto_id].inventario_real = null;
+      state.movimientos[p.producto_id].confirmado_ok = true;
       guardarMovimientoSoloSupabase(p.producto_id, false);
       if(APPS_SCRIPT_URL && state.puntoSheetId){
         await enviarConReintento("marcar_ok", p.nombre_excel, APPS_SCRIPT_URL, {
@@ -1198,6 +1200,7 @@ function renderInventarioInicial(){
     div.querySelector(".btn-mod").addEventListener("click", async ()=>{
       div.classList.remove("ok"); div.classList.add("edit");
       div.querySelector(".modBox").classList.remove("hidden");
+      state.movimientos[p.producto_id].confirmado_ok = false;
       // si venía de un "OK" previo, quita el color verde del Excel al volver a editar
       if(APPS_SCRIPT_URL && state.puntoSheetId){
         await enviarConReintento("marcar_ok", p.nombre_excel, APPS_SCRIPT_URL, {
@@ -1275,17 +1278,17 @@ function renderVentasManuales(){
   state.catalogo.forEach(p=>{
     const div = document.createElement("div");
     div.className = "product-row";
+    const mov = state.movimientos[p.producto_id];
     div.innerHTML = `
       <div class="pname">${p.nombre_excel}</div>
       <div class="psub">${p.categoria} · ${fmt(p.precio)}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <div><label style="font-size:11px;color:var(--gray);">Venta efectivo</label><input type="number" class="mini-input v-venta" value="0" style="width:100%"></div>
-        <div><label style="font-size:11px;color:var(--gray);">Descuento $ (sobre esa venta)</label><input type="number" class="mini-input v-desc" value="0" style="width:100%"></div>
+        <div><label style="font-size:11px;color:var(--gray);">Venta efectivo</label><input type="number" class="mini-input v-venta" value="${mov.ventas_efectivo_no_facturadas||0}" style="width:100%"></div>
+        <div><label style="font-size:11px;color:var(--gray);">Descuento $ (sobre esa venta)</label><input type="number" class="mini-input v-desc" value="${mov.descuentos_aplicados||0}" style="width:100%"></div>
       </div>
       <button class="btn btn-outline btn-block btn-guardarVenta" style="margin-top:8px;">Guardar este producto</button>
     `;
     cont.appendChild(div);
-    const mov = state.movimientos[p.producto_id];
     div.querySelector(".v-venta").addEventListener("input", e=>{
       mov.ventas_efectivo_no_facturadas = Number(e.target.value||0); recalcularCuadre();
     });
@@ -1565,37 +1568,38 @@ let siigoUltimaImportacion = null; // guarda lo parseado hasta que se presione "
 
 function renderManualSalida(){
   const cont = document.getElementById("listaManualSalida");
-  cont.innerHTML = state.catalogo.map(p=>`
+  cont.innerHTML = state.catalogo.map(p=>{
+    const mov = state.movimientos[p.producto_id];
+    return `
     <div class="product-row" data-nombre="${p.nombre_excel.toLowerCase()}">
       <div class="pname" style="font-size:13px;">${p.nombre_excel}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px;">
-        <div><label style="font-size:10.5px;color:var(--gray);">Salida</label><input type="number" class="mini-input inpManualSalida" data-id="${p.producto_id}" placeholder="0" style="width:100%;"></div>
-        <div><label style="font-size:10.5px;color:var(--gray);">Regalos</label><input type="number" class="mini-input inpManualRegalo" data-id="${p.producto_id}" placeholder="0" style="width:100%;"></div>
-        <div><label style="font-size:10.5px;color:var(--gray);">Descuento $</label><input type="number" class="mini-input inpManualDescuento" data-id="${p.producto_id}" placeholder="0" style="width:100%;"></div>
+        <div><label style="font-size:10.5px;color:var(--gray);">Salida (total)</label><input type="number" class="mini-input inpManualSalida" data-id="${p.producto_id}" value="${mov.salidas_siigo||0}" style="width:100%;"></div>
+        <div><label style="font-size:10.5px;color:var(--gray);">Regalos (total)</label><input type="number" class="mini-input inpManualRegalo" data-id="${p.producto_id}" value="${mov.regalos_entregados||0}" style="width:100%;"></div>
+        <div><label style="font-size:10.5px;color:var(--gray);">Descuento $ (total)</label><input type="number" class="mini-input inpManualDescuento" data-id="${p.producto_id}" value="${mov.descuentos_facturados||0}" style="width:100%;"></div>
       </div>
-      <button class="btn btn-outline btn-block btn-guardarManualSalida" data-id="${p.producto_id}" style="margin-top:6px;">Sumar</button>
-    </div>`).join("");
+      <button class="btn btn-outline btn-block btn-guardarManualSalida" data-id="${p.producto_id}" style="margin-top:6px;">Guardar</button>
+    </div>`;
+  }).join("");
 
   cont.querySelectorAll(".btn-guardarManualSalida").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const pid = btn.dataset.id;
-      const cantSalida = Number(cont.querySelector(`.inpManualSalida[data-id="${pid}"]`).value || 0);
-      const cantRegalo = Number(cont.querySelector(`.inpManualRegalo[data-id="${pid}"]`).value || 0);
-      const valDescuento = Number(cont.querySelector(`.inpManualDescuento[data-id="${pid}"]`).value || 0);
-      if(cantSalida<=0 && cantRegalo<=0 && valDescuento<=0){ toast("Escribe al menos un valor mayor a 0"); return; }
+      const nuevaSalida = Number(cont.querySelector(`.inpManualSalida[data-id="${pid}"]`).value || 0);
+      const nuevoRegalo = Number(cont.querySelector(`.inpManualRegalo[data-id="${pid}"]`).value || 0);
+      const nuevoDescuento = Number(cont.querySelector(`.inpManualDescuento[data-id="${pid}"]`).value || 0);
       const prod = state.catalogo.find(p=>p.producto_id===pid);
-      if(!confirmar(`sumar estos valores a ${prod.nombre_excel}`)) return;
+      if(!confirmar(`guardar estos totales para ${prod.nombre_excel} (reemplaza lo que hubiera antes)`)) return;
 
-      const campos = [];
-      if(cantSalida > 0){ state.movimientos[pid].salidas_siigo = (state.movimientos[pid].salidas_siigo||0) + cantSalida; campos.push("salidas_siigo"); }
-      if(cantRegalo > 0){ state.movimientos[pid].regalos_entregados = (state.movimientos[pid].regalos_entregados||0) + cantRegalo; campos.push("regalos_entregados"); }
-      if(valDescuento > 0){ state.movimientos[pid].descuentos_facturados = (state.movimientos[pid].descuentos_facturados||0) + valDescuento; campos.push("descuentos_facturados"); }
+      // Este campo GUARDA el total, no suma — así nunca se duplica si
+      // se corrige algo o se vuelve a entrar por error.
+      state.movimientos[pid].salidas_siigo = nuevaSalida;
+      state.movimientos[pid].regalos_entregados = nuevoRegalo;
+      state.movimientos[pid].descuentos_facturados = nuevoDescuento;
 
-      await guardarMovimiento(pid, false, campos);
-      auditar("Siigo", `Registró manual en ${prod.nombre_excel}: salida ${cantSalida}, regalo ${cantRegalo}, descuento ${fmt(valDescuento)}`);
-      cont.querySelector(`.inpManualSalida[data-id="${pid}"]`).value = "";
-      cont.querySelector(`.inpManualRegalo[data-id="${pid}"]`).value = "";
-      cont.querySelector(`.inpManualDescuento[data-id="${pid}"]`).value = "";
+      await guardarMovimiento(pid, false, ["salidas_siigo","regalos_entregados","descuentos_facturados"]);
+      auditar("Siigo", `Guardó manual en ${prod.nombre_excel}: salida ${nuevaSalida}, regalo ${nuevoRegalo}, descuento ${fmt(nuevoDescuento)}`);
+      toast("Guardado ✓");
     });
   });
 }
@@ -1813,7 +1817,8 @@ document.getElementById("btnAgregarPago").addEventListener("click", async ()=>{
       body: JSON.stringify({
         accion: "venta_individual",
         sheetId: state.puntoSheetId,
-        tipo, subtipo, valor
+        tipo, subtipo, valor,
+        token: data.id // evita que un reintento (por señal fallando) escriba la misma venta dos veces
       })
     });
   }
