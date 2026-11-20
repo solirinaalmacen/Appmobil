@@ -330,6 +330,39 @@
   .btn-ver-clave{ position:absolute; right:3px; top:50%; transform:translateY(-50%); width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:transparent; border:0; border-radius:var(--r-control); color:var(--texto-suave); cursor:pointer; padding:0; }
   .btn-ver-clave:hover{ color:var(--marca); }
   .btn-ver-clave[aria-pressed="true"]{ color:var(--marca); }
+  /* ---- Tino: app completa ---- */
+  h1, h2, h3{ overflow-wrap:anywhere; }
+  header.topbar .row > input{ flex:1; min-width:0; }
+  body:not(.modo-siigo) .buscador{ position:static; }
+  .campo-solo-lectura{ background:var(--divisor) !important; color:var(--texto-suave) !important; }
+  #indicadorPendientes{ text-align:center; font-size:13px; font-weight:600; padding:6px 10px; border-radius:var(--r-control); margin-top:var(--e1); background:var(--rev-bg); color:var(--rev-tx); }
+  #fabEnviar{ position:fixed; right:16px; bottom:84px; z-index:60; display:inline-flex; align-items:center; gap:6px; min-height:48px; padding:12px 18px;
+    background:var(--marca); color:#fff; border:none; border-radius:999px; font-weight:700; font-size:15px; font-family:inherit; box-shadow:none; cursor:pointer; }
+  #fabEnviar:active{ background:var(--marca-hover); }
+  #fabEnviar.hidden{ display:none; }
+  .fila-pago{ display:flex; justify-content:space-between; align-items:center; gap:var(--e2); }
+  .fila-pago .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .btn-icono{ width:44px; height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; border:none; background:transparent; border-radius:var(--r-control); color:var(--desc-tx); cursor:pointer; padding:0; }
+  .btn-icono:active{ background:var(--desc-bg); }
+  .obs-fila{ display:flex; justify-content:space-between; align-items:center; gap:var(--e2); }
+  .check-item{ display:flex; align-items:flex-start; gap:var(--e2); padding:var(--e2) 0; font-size:15px; }
+  .check-item .estado{ flex-shrink:0; margin-top:1px; }
+  .check-item.no-ok{ color:var(--desc-tx); font-weight:600; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:var(--e2); }
+  .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .grid-4 label{ font-size:12px !important; }
+  .detalle-precio{ color:var(--texto-suave); font-weight:400; }
+  .divisor{ border:none; border-top:1px solid var(--divisor); margin:var(--e2) 0; }
+  .fila-entrada{ display:flex; gap:var(--e2); }
+  .fila-entrada .mini-input{ flex:1; min-width:0; }
+  .modBox{ display:flex; gap:var(--e2); align-items:center; flex-wrap:wrap; }
+  .modBox.hidden{ display:none; }
+  .modBox .mini-input{ flex:1; min-width:120px; }
+  .btn-pequeno{ min-height:44px; padding:8px 14px; font-size:14px; }
+  .product-row:not(.fila-pago){ display:flex; flex-direction:column; gap:var(--e2); }
+  .product-row .field, .product-row .pname, .product-row .psub{ margin:0; }
+  .btn svg, #fabEnviar svg{ pointer-events:none; flex-shrink:0; }
+  .total-line .valor-detalle{ font-weight:400; color:var(--texto-suave); }
 </style>
 </head>
 <body>
@@ -362,9 +395,9 @@
     </div>
   </div>
 
-  <button id="btnAbrirHistorial" class="btn btn-outline btn-block hidden" style="margin-top:14px;">📊 Revisar un día anterior</button>
-  <div id="bloqueHistorial" class="hidden card" style="text-align:left;margin-top:10px;">
-    <h2 style="margin-bottom:10px;">📊 Revisar un día anterior</h2>
+  <button id="btnAbrirHistorial" class="btn btn-outline btn-block hidden"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Revisar un día anterior</button>
+  <div id="bloqueHistorial" class="hidden card">
+    <h2>Revisar un día anterior</h2>
     <div class="field">
       <label>Punto de venta</label>
       <select id="selPuntoHistorial"></select>
@@ -374,7 +407,7 @@
       <input id="inpFechaHistorial" type="date">
     </div>
     <button class="btn btn-outline btn-block" id="btnBuscarHistorial">Buscar ese día</button>
-    <button class="btn btn-outline btn-block" id="btnCancelarHistorial" style="margin-top:8px;">← Volver</button>
+    <button class="btn btn-outline btn-block" id="btnCancelarHistorial"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Volver</button>
   </div>
 </div>
 
@@ -393,7 +426,7 @@
       <div id="lblPuntoFijo">—</div>
       <button id="btnCambiarPunto" type="button">Cambiar</button>
     </div>
-    <div id="indicadorPendientes" class="hidden" style="background:#5a3d00;color:#ffd580;text-align:center;font-size:12px;padding:5px;border-radius:6px;margin-top:4px;"></div>
+    <div id="indicadorPendientes" class="hidden"></div>
   </header>
 
   <main>
@@ -402,12 +435,10 @@
     <section id="screen1" class="screen">
       <div class="card">
         <h2>1 · Verificación de base</h2>
-        <p style="font-size:14px;margin-bottom:10px;">
-          Base configurada para este punto: <strong id="lblBaseEsperada">$0</strong>
-        </p>
-        <div class="row-btns" style="margin-bottom:10px;">
-          <button class="btn btn-green" id="btnBaseOk">✓ Base OK</button>
-          <button class="btn btn-red" id="btnBaseMal">✕ Base Incorrecta</button>
+        <p>Base configurada para este punto: <strong id="lblBaseEsperada">$ 0</strong></p>
+        <div class="row-btns">
+          <button class="btn btn-green" id="btnBaseOk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Base OK</button>
+          <button class="btn btn-red" id="btnBaseMal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Base incorrecta</button>
         </div>
         <div id="baseIncorrectaBox" class="hidden">
           <div class="field">
@@ -423,8 +454,9 @@
 
       <div class="card">
         <h2>Inventario inicial</h2>
-        <div class="field">
-          <input id="buscarProducto1" type="text" placeholder="🔍 Buscar producto...">
+        <div class="buscador">
+          <label for="buscarProducto1" class="ayuda">Buscar producto</label>
+          <div class="buscador-control"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="buscarProducto1" class="campo-control" type="text" placeholder="Escribe el nombre…"></div>
         </div>
         <div id="listaInventarioInicial"></div>
       </div>
@@ -434,21 +466,22 @@
     <section id="screen2" class="screen hidden">
       <div class="card">
         <h2>2 · Ventas en efectivo apartado</h2>
-        <div class="field">
-          <input id="buscarProducto2" type="text" placeholder="🔍 Buscar producto...">
+        <div class="buscador">
+          <label for="buscarProducto2" class="ayuda">Buscar producto</label>
+          <div class="buscador-control"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="buscarProducto2" class="campo-control" type="text" placeholder="Escribe el nombre…"></div>
         </div>
         <div id="listaVentasManuales"></div>
       </div>
-      <button class="btn btn-gold btn-block" id="btnEnviarVentas" style="font-size:15px;padding:14px;">Enviar ventas</button>
+      <button class="btn btn-gold btn-block btn-final" id="btnEnviarVentas">Enviar ventas</button>
     </section>
 
     <!-- PANTALLA 3: DENOMINACIÓN DE CAJA -->
     <section id="screen3" class="screen hidden">
       <div class="card">
         <h2>5 · Caja — Arqueo físico (efectivo)</h2>
-        <div id="denominacionGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
-        <div class="total-line big"><span>Total físico contado</span><span id="lblEfectivoFisico">$0</span></div>
-        <div class="field" style="margin-top:10px;">
+        <div id="denominacionGrid" class="grid-2"></div>
+        <div class="total-line big"><span>Total físico contado</span><span id="lblEfectivoFisico">$ 0</span></div>
+        <div class="field">
           <label>Sencillo recibido (solo si te dieron sencillo)</label>
           <input type="number" id="inp_sencillo_recibido" value="0">
         </div>
@@ -456,11 +489,9 @@
 
       <div class="card">
         <h2>Medios de pago (calculado automático)</h2>
-        <p style="font-size:12px;color:var(--gray);margin-bottom:8px;">
-          Esto ya no se escribe a mano — se suma solo desde lo que registraste en la pestaña 💳 Pagos.
-        </p>
-        <div class="total-line"><span>Tarjetas débito y crédito</span><span id="lbl_tarjetas_calc">$0</span></div>
-        <div class="total-line"><span>Transferencias</span><span id="lbl_transferencias_calc">$0</span></div>
+        <p class="ayuda">Esto ya no se escribe a mano — se suma solo desde lo que registraste en la pestaña Recaudo.</p>
+        <div class="total-line"><span>Tarjetas débito y crédito</span><span id="lbl_tarjetas_calc">$ 0</span></div>
+        <div class="total-line"><span>Transferencias</span><span id="lbl_transferencias_calc">$ 0</span></div>
       </div>
 
       <div class="card">
@@ -471,10 +502,10 @@
 
       <div class="card">
         <h2>Movimientos especiales</h2>
-        <div class="total-line"><span>Efectivo apartado (antes "Pagos")</span><span id="lbl_efectivo_apartado_calc">$0</span></div>
+        <div class="total-line"><span>Efectivo apartado (antes "Pagos")</span><span id="lbl_efectivo_apartado_calc">$ 0</span></div>
         <div class="field">
           <label>Base del día (se lee sola del Sheet, no se digita)</label>
-          <input type="number" id="inp_base_dia" value="0" readonly style="background:#f0ece0;color:var(--gray);">
+          <input type="number" id="inp_base_dia" value="0" readonly class="campo-solo-lectura">
         </div>
 
         <div class="field"><label>Gastos (+)</label><input type="number" id="inp_gastos" value="0"></div>
@@ -490,21 +521,21 @@
         <div class="field hidden" id="obsBox_cambios"><label>Observación de cambios (obligatoria)</label><textarea id="inp_cambios_obs"></textarea></div>
       </div>
 
-      <button class="btn btn-gold btn-block" id="btnEnviarCaja" style="font-size:15px;padding:14px;">Enviar caja</button>
+      <button class="btn btn-gold btn-block btn-final" id="btnEnviarCaja">Enviar caja</button>
 
       <div class="card">
-        <h2>💰 Efectivo de la encargada (DESC/FACT)</h2>
-        <p style="font-size:11.5px;color:var(--gray);margin-bottom:8px;">Dinero circunstancial que trae/lleva la encargada (gastos, etc.) — no tiene que ver con la venta del punto.</p>
-        <button class="btn btn-outline btn-block" id="btnCargarDescFact" style="margin-bottom:10px;">🔄 Cargar de hoy</button>
-        <div id="bloqueDescFact" class="hidden">
-          <div class="total-line"><span>Efectivo sin facturar</span><span id="df_efectivoSinFacturar">$0</span></div>
-          <div class="total-line"><span>Total</span><span id="df_total">$0</span></div>
-          <div class="total-line big"><span>Saldo</span><span id="df_saldo">$0</span></div>
-          <div class="field" style="margin-top:10px;"><label>Dinero entregado</label><input type="number" id="df_dineroEntregado" min="1" placeholder="Ej: 100000"></div>
+        <h2>Efectivo de la encargada (DESC/FACT)</h2>
+        <p class="ayuda">Dinero circunstancial que trae/lleva la encargada (gastos, etc.) — no tiene que ver con la venta del punto.</p>
+        <button class="btn btn-outline btn-block" id="btnCargarDescFact"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Cargar de hoy</button>
+        <div id="bloqueDescFact" class="hidden pila">
+          <div class="total-line"><span>Efectivo sin facturar</span><span id="df_efectivoSinFacturar">$ 0</span></div>
+          <div class="total-line"><span>Total</span><span id="df_total">$ 0</span></div>
+          <div class="total-line big"><span>Saldo</span><span id="df_saldo">$ 0</span></div>
+          <div class="field"><label>Dinero entregado</label><input type="number" id="df_dineroEntregado" min="1" placeholder="Ej: 100000"></div>
           <div class="field"><label>Quién recibe</label><input type="text" id="df_quienRecibe" placeholder="Ej: Sra Martha"></div>
-          <button class="btn btn-gold btn-block" id="btnGuardarDescFact" style="margin-top:8px;">Guardar</button>
+          <button class="btn btn-outline btn-block" id="btnGuardarDescFact">Guardar</button>
         </div>
-        <p id="df_noExiste" class="hidden" style="font-size:12.5px;color:var(--gray);">No encontré una fila para hoy en la pestaña DESC/FACT.</p>
+        <p id="df_noExiste" class="hidden ayuda">No encontré una fila para hoy en la pestaña DESC/FACT.</p>
       </div>
     </section>
 
@@ -548,24 +579,24 @@
     <section id="screen5" class="screen hidden">
       <div class="card">
         <h2>6 · Cierre — Observaciones generadas</h2>
-        <div id="listaObservaciones"><p style="font-size:13px;color:var(--gray);">Sin observaciones automáticas todavía.</p></div>
-        <button class="btn btn-gold btn-block" id="btnSubirObsPendientes" style="margin-top:10px;">📤 Subir observaciones al Excel</button>
-        <div class="field" style="margin-top:10px;">
+        <div id="listaObservaciones" class="pila"><p class="ayuda">Sin observaciones automáticas todavía.</p></div>
+        <button class="btn btn-outline btn-block" id="btnSubirObsPendientes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>Subir observaciones al Excel</button>
+        <div class="field">
           <label>Observación extra (opcional)</label>
           <textarea id="txtObsExtra" placeholder="Escribe cualquier novedad adicional..."></textarea>
         </div>
-        <button class="btn btn-outline btn-block" id="btnEnviarObsExtra" style="margin-top:8px;">Guardar esta observación ahora</button>
+        <button class="btn btn-outline btn-block" id="btnEnviarObsExtra">Guardar esta observación ahora</button>
       </div>
 
       <div class="card">
-        <h2>✅ Verifica antes de finalizar</h2>
+        <h2>Verifica antes de finalizar</h2>
         <div id="listaChecklist"></div>
       </div>
 
       <div class="card">
         <h2>Resumen final — REVISA TODO antes de finalizar</h2>
-        <p style="font-size:11.5px;color:var(--gray);margin-bottom:8px;">Esto es lo que ya está en el Excel — se actualiza solo al llegar aquí, o dale "Actualizar" si algo cambió.</p>
-        <button class="btn btn-outline btn-block" id="btnVerificarCierreExcel" style="margin-bottom:10px;">🔄 Actualizar</button>
+        <p class="ayuda">Esto es lo que ya está en el Excel — se actualiza solo al llegar aquí, o dale "Actualizar" si algo cambió.</p>
+        <button class="btn btn-outline btn-block" id="btnVerificarCierreExcel"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Actualizar</button>
         <div class="total-line"><span>Efectivo físico contado</span><span id="resumen_fisico">Cargando...</span></div>
         <div class="total-line"><span>Total descuentos Milagros</span><span id="resumen_descMilagros">—</span></div>
         <div class="total-line"><span>Total descuentos Idunn/otros</span><span id="resumen_descOtros">—</span></div>
@@ -580,35 +611,36 @@
         <div class="total-line big" id="lineResumenDescuadre"><span>Descuadre</span><span id="resumen_descuadre">Cargando...</span></div>
       </div>
 
-      <button class="btn btn-outline btn-block" id="btnAbrirDiagnostico" style="margin-bottom:10px;">🔍 Diagnóstico del descuadre</button>
-      <button class="btn btn-red btn-block" id="btnReiniciarDia" style="margin-bottom:10px;">🗑️ Reiniciar este día (empezar de nuevo)</button>
-      <button class="btn btn-gold btn-block" id="btnFinalizar" style="font-size:16px;padding:16px;">
-        Finalizar y guardar reporte
-      </button>
+      <button class="btn btn-outline btn-block" id="btnAbrirDiagnostico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Diagnóstico del descuadre</button>
+      <button class="btn btn-peligro btn-block" id="btnReiniciarDia"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Reiniciar este día (empezar de nuevo)</button>
+      <button class="btn btn-gold btn-block btn-final" id="btnFinalizar">Finalizar y guardar reporte</button>
     </section>
 
     <!-- PANTALLA 7: DIAGNÓSTICO DEL DESCUADRE (solo revisión, no guarda nada) -->
     <section id="screen7" class="screen hidden">
       <div class="card">
-        <h2>🔍 Diagnóstico del descuadre</h2>
-        <p style="font-size:12.5px;color:var(--gray);">
+        <h2>Diagnóstico del descuadre</h2>
+        <p class="ayuda">
           Esto es solo para REVISAR. Puedes cambiar los números aquí
           para probar "¿y si este dato fuera distinto?" y ver cómo
           cambia el descuadre — <strong>nada de esto se guarda</strong>.
           Si encuentras el error, avísale a la encargada para que lo
           corrija directamente en el Excel.
         </p>
-        <button class="btn btn-outline btn-block" id="btnReiniciarDiagnostico" style="margin-top:8px;">↺ Restablecer a los datos reales</button>
+        <button class="btn btn-outline btn-block" id="btnReiniciarDiagnostico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Restablecer a los datos reales</button>
       </div>
 
       <div class="card">
         <h2>Cuadre de caja</h2>
-        <div id="diagCuadreCampos"></div>
+        <div id="diagCuadreCampos" class="pila"></div>
       </div>
 
       <div class="card">
         <h2>Productos con movimiento hoy</h2>
-        <input id="buscarDiagProducto" type="text" placeholder="🔍 Buscar producto..." style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
+        <div class="buscador">
+          <label for="buscarDiagProducto" class="ayuda">Buscar producto</label>
+          <div class="buscador-control"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="buscarDiagProducto" class="campo-control" type="text" placeholder="Escribe el nombre…"></div>
+        </div>
         <div id="diagProductos"></div>
       </div>
 
@@ -624,24 +656,24 @@
 
       <div class="card">
         <h2>Resultado</h2>
-        <div class="total-line"><span>Efectivo físico</span><span id="diag_fisico">$0</span></div>
-        <div class="total-line"><span>Regalos Milagros</span><span id="diag_regMilagros">$0</span></div>
-        <div class="total-line"><span>Regalos Idunn/otros</span><span id="diag_regOtros">$0</span></div>
-        <div class="total-line"><span>Descuentos Milagros</span><span id="diag_descMilagros">$0</span></div>
-        <div class="total-line"><span>Descuentos Idunn/otros</span><span id="diag_descOtros">$0</span></div>
-        <div class="total-line"><span>Valor teórico vendido (Siigo + manual)</span><span id="diag_teorico">$0</span></div>
-        <div class="total-line"><span>TOTAL CAJA</span><span id="diag_total">$0</span></div>
-        <div class="total-line big"><span>Descuadre</span><span id="diag_descuadre">$0</span></div>
+        <div class="total-line"><span>Efectivo físico</span><span id="diag_fisico">$ 0</span></div>
+        <div class="total-line"><span>Regalos Milagros</span><span id="diag_regMilagros">$ 0</span></div>
+        <div class="total-line"><span>Regalos Idunn/otros</span><span id="diag_regOtros">$ 0</span></div>
+        <div class="total-line"><span>Descuentos Milagros</span><span id="diag_descMilagros">$ 0</span></div>
+        <div class="total-line"><span>Descuentos Idunn/otros</span><span id="diag_descOtros">$ 0</span></div>
+        <div class="total-line"><span>Valor teórico vendido (Siigo + manual)</span><span id="diag_teorico">$ 0</span></div>
+        <div class="total-line"><span>TOTAL CAJA</span><span id="diag_total">$ 0</span></div>
+        <div class="total-line big"><span>Descuadre</span><span id="diag_descuadre">$ 0</span></div>
       </div>
 
-      <button class="btn btn-outline btn-block" id="btnVolverDeDiagnostico">← Volver al cierre</button>
+      <button class="btn btn-outline btn-block" id="btnVolverDeDiagnostico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Volver al cierre</button>
     </section>
 
     <!-- PANTALLA 6: VENTAS POR TRANSFERENCIA / DÉBITO / CRÉDITO (a lo largo del día) -->
     <section id="screen6" class="screen hidden">
       <div class="card">
         <h2>3 · Recaudo — Ventas totales del día</h2>
-        <p style="font-size:13px;color:var(--gray);margin-bottom:10px;">
+        <p class="ayuda">
           Anota aquí cada venta apenas ocurra, una por una. Se envía directo al Sheet (columnas Transferencias/Tarjeta Débito/Tarjeta Crédito).
         </p>
         <div class="field">
@@ -665,27 +697,27 @@
           <label>Valor</label>
           <input type="number" id="inpValorPago" placeholder="Ej: 39900">
         </div>
-        <button class="btn btn-gold btn-block" id="btnAgregarPago">Agregar venta</button>
+        <button class="btn btn-gold btn-block btn-final" id="btnAgregarPago">Agregar venta</button>
       </div>
 
       <div class="card">
         <h2>Ventas registradas hoy</h2>
-        <div class="total-line"><span>Total transferencias</span><span id="totalPago_transferencia">$0</span></div>
-        <div class="total-line"><span>Total tarjeta débito</span><span id="totalPago_debito">$0</span></div>
-        <div class="total-line"><span>Total tarjeta crédito</span><span id="totalPago_credito">$0</span></div>
-        <div class="total-line big"><span>Total efectivo</span><span id="totalPago_efectivo">$0</span></div>
-        <div id="listaPagosIndividuales"><p style="font-size:13px;color:var(--gray);">Sin ventas registradas todavía.</p></div>
+        <div class="total-line"><span>Total transferencias</span><span id="totalPago_transferencia">$ 0</span></div>
+        <div class="total-line"><span>Total tarjeta débito</span><span id="totalPago_debito">$ 0</span></div>
+        <div class="total-line"><span>Total tarjeta crédito</span><span id="totalPago_credito">$ 0</span></div>
+        <div class="total-line big"><span>Total efectivo</span><span id="totalPago_efectivo">$ 0</span></div>
+        <div id="listaPagosIndividuales" class="pila"><p class="ayuda">Sin ventas registradas todavía.</p></div>
       </div>
     </section>
 
   </main>
 
-  <button id="fabEnviar" class="hidden" style="position:fixed;right:16px;bottom:78px;z-index:60;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;border:none;padding:12px 18px;border-radius:30px;font-weight:700;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.25);">⬆ Enviar</button>
+  <button id="fabEnviar" class="hidden">Enviar</button>
 
   <nav class="bottom">
     <button data-screen="1" class="navbtn active"><span class="dot">1</span>Inventario</button>
     <button data-screen="2" class="navbtn"><span class="dot">2</span>Ventas</button>
-    <button data-screen="6" class="navbtn"><span class="dot">💳</span>Recaudo</button>
+    <button data-screen="6" class="navbtn"><span class="dot">3</span>Recaudo</button>
     <button data-screen="4" class="navbtn"><span class="dot">4</span>Siigo</button>
     <button data-screen="3" class="navbtn"><span class="dot">5</span>Caja</button>
     <button data-screen="5" class="navbtn"><span class="dot">6</span>Cierre</button>
@@ -735,10 +767,9 @@ const APP_LOGIN_EMAIL = "app@milagros.local";
    Supabase). Si lo dejas vacío, la app usa como respaldo la tabla
    mapeo_siigo de Supabase (la que llenaste con 05/06).
 ===================================================================== */
-// MODO SIIGO (Tino Lite): la app muestra SOLO la pantalla de Siigo. Todo lo
-// demás sigue en el código, oculto. Para usar la app completa, abrir el
-// link con ?completo al final (ej: appmobilmilagros.netlify.app/?completo).
-const MODO_SIIGO = !new URLSearchParams(location.search).has("completo");
+// MODO SIIGO (respaldo): por defecto abre la app COMPLETA. Con ?siigo al
+// final del link (ej: tu-link/?siigo) muestra solo la pantalla de Siigo.
+const MODO_SIIGO = new URLSearchParams(location.search).has("siigo");
 if(MODO_SIIGO) document.body.classList.add("modo-siigo");
 const MAPEO_SIIGO_SHEET_ID = "1VZZel5ES4VlAkbfBHktjDUNetF_vJF-jlhcenbX0l34";
 
@@ -1425,7 +1456,7 @@ document.getElementById("btnCargarDescFact").addEventListener("click", async ()=
     document.getElementById("df_dineroEntregado").placeholder = "Ya hay: " + fmt(json.dineroEntregado);
     document.getElementById("df_quienRecibe").value = json.quienRecibe || "";
   }catch(e){ toast("No se pudo conectar: "+e.message); }
-  btn.disabled = false; btn.textContent = "🔄 Cargar de hoy";
+  btn.disabled = false; btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Cargar de hoy`;
 });
 
 document.getElementById("btnGuardarDescFact").addEventListener("click", async ()=>{
@@ -1474,7 +1505,7 @@ async function verificarCierreConExcel(){
      "resumen_danados","resumen_devoluciones","resumen_cambios","resumen_ventaEfectivo","resumen_valorTeorico",
      "resumen_total","resumen_descuadre"].forEach(id=>{ document.getElementById(id).textContent = "Sin conexión"; });
   }
-  if(btn){ btn.disabled = false; btn.textContent = "🔄 Actualizar"; }
+  if(btn){ btn.disabled = false; btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Actualizar`; }
 }
 document.getElementById("btnVerificarCierreExcel").addEventListener("click", verificarCierreConExcel);
 
@@ -1805,18 +1836,18 @@ function htmlFilaInventario(p){
       <div class="pname">${p.nombre_excel}</div>
       <div class="psub">${p.categoria} · Teórico: <span class="teo">${mov.inventario_teorico_original ?? mov.inventario_inicial}</span> uds</div>
       <div class="row-btns">
-        <button class="btn btn-green btn-ok" style="flex:1">✓ OK</button>
-        <button class="btn btn-outline btn-mod" style="flex:1">Modificar</button>
+        <button class="btn btn-green btn-ok"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>OK</button>
+        <button class="btn btn-outline btn-mod">Modificar</button>
       </div>
-      <div class="${mov.inventario_real!=null ? '' : 'hidden'} modBox" style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+      <div class="${mov.inventario_real!=null ? '' : 'hidden'} modBox">
         <input type="number" inputmode="numeric" class="mini-input inpReal" placeholder="Cantidad real" value="${mov.inventario_real ?? ''}">
         <button class="btn btn-gold btn-guardarMod">Guardar</button>
         ${mov.inventario_real!=null ? '<button class="btn btn-red btn-cancelarMod">Cancelar</button>' : ''}
       </div>
-      <div class="field" style="margin-top:8px;">
+      <div class="field">
         <label>Entradas de mercancía hoy ${mov.entradas>0 ? `<span class="badge badge-ok">Hoy entraron: ${mov.entradas}</span>` : ""}</label>
-        <div style="display:flex;gap:8px;">
-          <input type="number" inputmode="numeric" class="mini-input inpEntradas" value="${mov.entradas||0}" style="flex:1">
+        <div class="fila-entrada">
+          <input type="number" inputmode="numeric" class="mini-input inpEntradas" value="${mov.entradas||0}" aria-label="Entradas de mercancía hoy">
           <button class="btn btn-outline btn-guardarEntrada">Guardar</button>
         </div>
       </div>
@@ -1955,11 +1986,11 @@ function renderVentasManuales(){
     div.innerHTML = `
       <div class="pname">${p.nombre_excel}</div>
       <div class="psub">${p.categoria} · ${fmt(p.precio)}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <div><label style="font-size:11px;color:var(--gray);">Venta efectivo (apartado)</label><input type="number" class="mini-input v-venta" value="${mov.ventas_efectivo_no_facturadas||0}" style="width:100%"></div>
-        <div><label style="font-size:11px;color:var(--gray);">Descuento $ (sobre esa venta)</label><input type="number" class="mini-input v-desc" value="${mov.descuentos_aplicados||0}" style="width:100%"></div>
+      <div class="grid-2">
+        <div class="campo"><label>Venta efectivo (apartado)</label><input type="number" inputmode="numeric" class="mini-input v-venta" value="${mov.ventas_efectivo_no_facturadas||0}" style="width:100%"></div>
+        <div class="campo"><label>Descuento $ (sobre esa venta)</label><input type="number" inputmode="numeric" class="mini-input v-desc" value="${mov.descuentos_aplicados||0}" style="width:100%"></div>
       </div>
-      <button class="btn btn-outline btn-block btn-guardarVenta" style="margin-top:8px;">Guardar este producto</button>
+      <button class="btn btn-outline btn-block btn-guardarVenta">Guardar este producto</button>
     `;
     cont.appendChild(div);
     div.querySelector(".v-venta").addEventListener("input", e=>{
@@ -2788,8 +2819,8 @@ document.getElementById("btnAgregarPago").addEventListener("click", async ()=>{
   }
 
   document.getElementById("inpValorPago").value = "";
-  btn.textContent = "✓ Guardada — ya puedes agregar otra";
-  btn.style.background = "#2e7d4f";
+  btn.textContent = "● Guardada — ya puedes agregar otra";
+  btn.style.background = "var(--ok-tx)";
   toast("● Venta guardada correctamente");
   setTimeout(()=>{
     btn.disabled = false; btn.textContent = "Agregar venta"; btn.style.background = "";
@@ -2807,21 +2838,17 @@ function renderPagosIndividuales(){
   document.getElementById("totalPago_efectivo").textContent = fmt(totales.efectivo);
 
   if(state.pagosIndividuales.length === 0){
-    cont.innerHTML = `<p style="font-size:13px;color:var(--gray);">Sin ventas registradas todavía.</p>`;
+    cont.innerHTML = `<p class="ayuda">Sin ventas registradas todavía.</p>`;
     return;
   }
-  const colorBadge = {bancolombia:"background:#fff3cd;color:#8a6a00;", daviplata:"background:#d9f2e3;color:#1e7145;"};
-  const colorTipo = {transferencia:"background:#e8ddc8;color:#8a6a3d;", debito:"background:#dce8f5;color:#2c5b8a;", credito:"background:#f0e0f5;color:#7a3d8a;", efectivo:"background:#e5f3ea;color:#2e7d4f;"};
+  const claseTipo = {transferencia:"estado-banco", debito:"estado-neutro", credito:"estado-neutro", efectivo:"estado-ok"};
   cont.innerHTML = state.pagosIndividuales.slice().reverse().map((p)=>{
     const idxReal = state.pagosIndividuales.indexOf(p);
-    const banco = p.subtipo ? `<span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;${colorBadge[p.subtipo]||''}">${p.subtipo === "bancolombia" ? "Bancolombia" : "Daviplata"}</span>` : "";
-    const tipoBadge = `<span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;${colorTipo[p.tipo]||''}">${ETIQUETA_TIPO_PAGO[p.tipo]}</span>`;
-    return `<div class="product-row" style="display:flex;justify-content:space-between;align-items:center;">
-      <div><strong>${fmt(p.valor)}</strong><div class="psub" style="margin-top:4px;">${tipoBadge}</div></div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        ${banco}
-        <button class="btn btn-red btn-borrarPago" data-idx="${idxReal}" style="padding:4px 10px;font-size:12px;">Borrar</button>
-      </div>
+    const banco = p.subtipo ? `<span class="estado estado-neutro">${p.subtipo === "bancolombia" ? "Bancolombia" : "Daviplata"}</span>` : "";
+    const tipoBadge = `<span class="estado ${claseTipo[p.tipo]||'estado-neutro'}">${ETIQUETA_TIPO_PAGO[p.tipo]}</span>`;
+    return `<div class="product-row fila-pago">
+      <div><strong>${fmt(p.valor)}</strong><div class="chips">${tipoBadge}${banco}</div></div>
+      <button class="btn btn-red btn-pequeno btn-borrarPago" data-idx="${idxReal}">Borrar</button>
     </div>`;
   }).join("");
 
@@ -2848,13 +2875,13 @@ function renderPagosIndividuales(){
 function renderObservaciones(){
   const cont = document.getElementById("listaObservaciones");
   if(state.observacionesAuto.length===0){
-    cont.innerHTML = `<p style="font-size:13px;color:var(--gray);">Sin observaciones automáticas todavía.</p>`;
+    cont.innerHTML = `<p class="ayuda">Sin observaciones automáticas todavía.</p>`;
     return;
   }
   cont.innerHTML = state.observacionesAuto.map((o, i)=>
-    `<div class="obs-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+    `<div class="obs-item obs-fila">
       <div><span class="origen">${o.origen}</span>${o.observacion}</div>
-      <button class="btn-borrar-obs" data-i="${i}" style="border:none;background:none;color:var(--red);font-size:16px;cursor:pointer;flex-shrink:0;">🗑</button>
+      <button class="btn-borrar-obs btn-icono" data-i="${i}" aria-label="Borrar observación"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
     </div>`
   ).join("");
   cont.querySelectorAll(".btn-borrar-obs").forEach(btn=>{
@@ -2876,7 +2903,7 @@ document.getElementById("btnSubirObsPendientes").addEventListener("click", async
       o.enviadoSheet = true;
     }catch(e){ console.error("Error subiendo observación:", e); }
   }
-  btn.disabled = false; btn.textContent = "📤 Subir observaciones al Excel";
+  btn.disabled = false; btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>Subir observaciones al Excel`;
   toast("Observaciones subidas al Excel ●");
 });
 
@@ -3008,9 +3035,9 @@ function renderChecklist(){
   ];
 
   document.getElementById("listaChecklist").innerHTML = items.map(it => `
-    <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;">
-      <span style="font-size:16px;">${it.ok ? "✅" : (it.opcional ? "➖" : "⚠️")}</span>
-      <span style="font-size:13.5px;${it.ok ? '' : 'color:var(--red);font-weight:600;'}">${it.texto}</span>
+    <div class="check-item ${it.ok ? '' : (it.opcional ? '' : 'no-ok')}">
+      ${it.ok ? '<span class="estado estado-ok">● Listo</span>' : (it.opcional ? '<span class="estado estado-neutro">– Opcional</span>' : '<span class="estado estado-descuadre">■ Falta</span>')}
+      <span>${it.texto}</span>
     </div>
   `).join("");
 }
@@ -3183,7 +3210,7 @@ document.getElementById("btnReiniciarDia").addEventListener("click", async ()=>{
   }catch(e){
     toast("Error reiniciando: "+e.message);
   }
-  btn.disabled = false; btn.textContent = "🗑️ Reiniciar este día (empezar de nuevo)";
+  btn.disabled = false; btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Reiniciar este día (empezar de nuevo)`;
 });
 
 document.getElementById("btnAbrirDiagnostico").addEventListener("click", ()=>{
@@ -3224,16 +3251,16 @@ const CAMPOS_CUADRE_DIAG = [
 
 function renderDiagnostico(){
   document.querySelector("#screen7 h2").textContent = diagSoloLectura
-    ? `🔍 Diagnóstico — ${document.getElementById("selPuntoHistorial").selectedOptions[0]?.text || ""} · ${document.getElementById("inpFechaHistorial").value}`
-    : "🔍 Diagnóstico del descuadre";
+    ? `Diagnóstico — ${document.getElementById("selPuntoHistorial").selectedOptions[0]?.text || ""} · ${document.getElementById("inpFechaHistorial").value}`
+    : "Diagnóstico del descuadre";
   document.getElementById("btnReiniciarDiagnostico").classList.toggle("hidden", diagSoloLectura);
-  document.getElementById("btnVolverDeDiagnostico").textContent = diagSoloLectura ? "← Salir del historial" : "← Volver al cierre";
+  document.getElementById("btnVolverDeDiagnostico").innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>` + (diagSoloLectura ? "Salir del historial" : "Volver al cierre");
   // (el bloque de elegir fuente ya no existe — siempre es Excel en vivo)
 
   // --- Cuadre ---
   document.getElementById("diagCuadreCampos").innerHTML = CAMPOS_CUADRE_DIAG.map(([k,label])=>`
-    <div class="field" style="margin-bottom:8px;">
-      <label style="font-size:12px;">${label}</label>
+    <div class="field">
+      <label>${label}</label>
       <input type="number" class="diag-cuadre-input" data-k="${k}" value="${diag.cuadre[k]||0}">
     </div>`).join("");
   document.querySelectorAll(".diag-cuadre-input").forEach(inp=>{
@@ -3249,15 +3276,15 @@ function renderDiagnostico(){
   cont.innerHTML = (conMovimiento.length ? conMovimiento : diagCatalogo.slice(0,0)).map(p=>{
     const m = diag.movimientos[p.producto_id];
     return `<div class="product-row" data-nombre="${p.nombre_excel.toLowerCase()}">
-      <div class="pname">${p.nombre_excel} <span style="color:var(--gray);font-weight:400;">(${fmt(p.precio)})</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-top:6px;">
-        <div><label style="font-size:10.5px;color:var(--gray);">Siigo</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="salidas_siigo" value="${m.salidas_siigo||0}" style="width:100%;"></div>
-        <div><label style="font-size:10.5px;color:var(--gray);">Regalos</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="regalos_entregados" value="${m.regalos_entregados||0}" style="width:100%;"></div>
-        <div><label style="font-size:10.5px;color:var(--gray);">Desc.$</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="descuentos_aplicados" value="${m.descuentos_aplicados||0}" style="width:100%;"></div>
-        <div><label style="font-size:10.5px;color:var(--gray);">Efvo.</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="ventas_efectivo_no_facturadas" value="${m.ventas_efectivo_no_facturadas||0}" style="width:100%;"></div>
+      <div class="pname">${p.nombre_excel} <span class="detalle-precio">(${fmt(p.precio)})</span></div>
+      <div class="grid-4">
+        <div><label>Siigo</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="salidas_siigo" value="${m.salidas_siigo||0}" style="width:100%;"></div>
+        <div><label>Regalos</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="regalos_entregados" value="${m.regalos_entregados||0}" style="width:100%;"></div>
+        <div><label>Desc.$</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="descuentos_aplicados" value="${m.descuentos_aplicados||0}" style="width:100%;"></div>
+        <div><label>Efvo.</label><input type="number" class="mini-input diag-mov" data-id="${p.producto_id}" data-campo="ventas_efectivo_no_facturadas" value="${m.ventas_efectivo_no_facturadas||0}" style="width:100%;"></div>
       </div>
     </div>`;
-  }).join("") || `<p style="font-size:13px;color:var(--gray);">Ningún producto tiene movimientos hoy.</p>`;
+  }).join("") || `<p class="ayuda">Ningún producto tiene movimientos hoy.</p>`;
   document.querySelectorAll(".diag-mov").forEach(inp=>{
     inp.addEventListener("input", e=>{
       diag.movimientos[e.target.dataset.id][e.target.dataset.campo] = Number(e.target.value||0);
@@ -3277,15 +3304,15 @@ function renderDiagnostico(){
     `<div class="total-line big"><span>Total Débito + Crédito + Transferencia</span><span>${fmt(sumaElectronicos)}</span></div>
      <div class="total-line"><span>Venta en efectivo del día</span><span>${fmt(c2.venta_efectivo_dia_excel||0)}</span></div>
      <div class="total-line"><span>Dinero efectivo apartado</span><span>${fmt(c2.efectivo_apartado||0)}</span></div>
-     <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">` +
+     <hr class="divisor">` +
     (pagosDelDia.length
       ? pagosDelDia.map(p=>`<div class="total-line"><span>${ETIQUETA_TIPO_PAGO_DIAG[p.tipo]||p.tipo}${p.subtipo ? " ("+p.subtipo+")" : ""}</span><span>${fmt(p.valor)}</span></div>`).join("")
-      : `<p style="font-size:13px;color:var(--gray);">Sin pagos individuales registrados.</p>`);
+      : `<p class="ayuda">Sin pagos individuales registrados.</p>`);
 
   // --- Observaciones (solo lectura, para tener el contexto completo) ---
   document.getElementById("diagObservaciones").innerHTML = diagObservacionesData.length
     ? diagObservacionesData.map(o=>`<div class="obs-item"><span class="origen">${o.origen}</span>${o.observacion}</div>`).join("")
-    : `<p style="font-size:13px;color:var(--gray);">Sin observaciones registradas.</p>`;
+    : `<p class="ayuda">Sin observaciones registradas.</p>`;
 
   recalcularDiagnostico();
 }
@@ -3352,13 +3379,13 @@ document.querySelectorAll(".navbtn").forEach(b=>{
 function actualizarBotonFlotante(n){
   const fab = document.getElementById("fabEnviar");
   const acciones = {
-    "1": {texto:"⬆ Enviar inventario", fn: enviarTodoElInventario},
-    "2": {texto:"⬆ Enviar ventas", fn: ()=>document.getElementById("btnEnviarVentas").click()},
-    "3": {texto:"⬆ Enviar caja", fn: ()=>document.getElementById("btnEnviarCaja").click()}
+    "1": {texto:"Enviar inventario", fn: enviarTodoElInventario},
+    "2": {texto:"Enviar ventas", fn: ()=>document.getElementById("btnEnviarVentas").click()},
+    "3": {texto:"Enviar caja", fn: ()=>document.getElementById("btnEnviarCaja").click()}
   };
   const accion = acciones[String(n)];
   if(!accion){ fab.classList.add("hidden"); return; }
-  fab.textContent = accion.texto;
+  fab.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>` + accion.texto;
   fab.classList.remove("hidden");
   fab.onclick = accion.fn;
 }
