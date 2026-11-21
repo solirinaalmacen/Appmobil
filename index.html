@@ -948,10 +948,30 @@ function confirmar(accionEnTexto){
   return window.confirm(`¿Seguro que quieres ${accionEnTexto}?`);
 }
 
-// Los navegadores bloquean por CORS que fetch() lea la respuesta de
-// Apps Script desde otro dominio (Netlify). JSONP lo rodea cargando la
-// respuesta como un <script> normal, que no está sujeto a esa regla.
-function jsonpFetch(url){
+// Lectura/escritura con Apps Script. Primero intenta fetch() SIN cookies
+// de Google (credentials:"omit"): así no importa si el celular tiene
+// varias cuentas de Google abiertas (eso hacía que Google respondiera
+// una página de error y la app mostrara "No se pudo cargar el script").
+// Si fetch falla, cae al método de antes (JSONP con <script>).
+async function jsonpFetch(url){
+  const esObservacion = /[?&]tipo=observacion(&|$)/.test(url); // no se repite: podría duplicar la observación
+  try{
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), 25000);
+    let res;
+    try{ res = await fetch(url, {credentials:"omit", redirect:"follow", cache:"no-store", signal:ctrl.signal}); }
+    finally{ clearTimeout(t); }
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    return JSON.parse(await res.text());
+  }catch(e){
+    if(esObservacion) throw new Error("No se pudo conectar con el Excel ("+e.message+")");
+    console.warn("fetch a Apps Script falló, probando JSONP:", e);
+    return jsonpScript_(url);
+  }
+}
+
+// Método anterior: carga la respuesta como un <script> normal (JSONP).
+function jsonpScript_(url){
   return new Promise((resolve, reject)=>{
     const cbName = "jsonp_cb_" + Math.random().toString(36).slice(2);
     const script = document.createElement("script");
@@ -1261,19 +1281,44 @@ function pintarPuntos(puntos){
   if(elegido && [...sel.options].some(o=>o.value===elegido)) sel.value = elegido;
 }
 
+// El Sheet donde se escribe sale de "sheets_mensuales" según el MES de hoy
+// (ej: 2026-11). Así se pueden dejar cargados los meses por adelantado y
+// el día 1 la app cambia sola de Excel. Si el mes no está cargado, usa el
+// de "puntos_venta" como respaldo (como funcionaba antes).
+async function traerPuntosDelMes(){
+  const anioMes = fechaLocalHoy().slice(0,7);
+  const [resPuntos, resMes] = await Promise.all([
+    sb.from("puntos_venta").select("id,nombre,base_esperada,google_sheet_id,codigo_punto").eq("activo", true).order("codigo_punto"),
+    sb.from("sheets_mensuales").select("punto_id,google_sheet_id").eq("anio_mes", anioMes)
+  ]);
+  if(resPuntos.error) return {error: resPuntos.error};
+  const delMes = {};
+  (resMes.data || []).forEach(r=>{ if(r.google_sheet_id) delMes[r.punto_id] = r.google_sheet_id; });
+  const data = resPuntos.data.map(p=>({ ...p, google_sheet_id: delMes[p.id] || p.google_sheet_id }));
+  return {data, anioMes};
+}
+
 async function cargarPuntos(){
   const guardados = leerLocal("milagros_puntos", null);
-  if(guardados && guardados.length){
+  const mesGuardado = leerLocal("milagros_puntos_mes", "");
+  // Lo guardado en el celular solo se usa al instante si es del MISMO mes;
+  // si cambió el mes, espera a traer el Sheet nuevo (no escribe en el viejo).
+  if(guardados && guardados.length && mesGuardado === fechaLocalHoy().slice(0,7)){
     pintarPuntos(guardados);           // al instante, sin esperar internet
     prellenarAsesora();
     // se actualiza por detrás (por si cambió el Sheet del mes, la base, etc.)
-    sb.from("puntos_venta").select("id,nombre,base_esperada,google_sheet_id,codigo_punto").eq("activo", true).order("codigo_punto")
-      .then(({data, error})=>{ if(!error && data){ guardarLocal("milagros_puntos", data); pintarPuntos(data); } });
+    traerPuntosDelMes().then(({data, error, anioMes})=>{
+      if(!error && data){ guardarLocal("milagros_puntos", data); guardarLocal("milagros_puntos_mes", anioMes); pintarPuntos(data); }
+    });
     return;
   }
-  const {data, error} = await sb.from("puntos_venta").select("id,nombre,base_esperada,google_sheet_id,codigo_punto").eq("activo", true).order("codigo_punto");
-  if(error){ toast("Error cargando puntos: "+error.message); return; }
+  const {data, error, anioMes} = await traerPuntosDelMes();
+  if(error){
+    if(guardados && guardados.length){ pintarPuntos(guardados); prellenarAsesora(); toast("Sin conexión: revisa que el Excel sea el del mes actual"); return; }
+    toast("Error cargando puntos: "+error.message); return;
+  }
   guardarLocal("milagros_puntos", data);
+  guardarLocal("milagros_puntos_mes", anioMes);
   pintarPuntos(data);
   prellenarAsesora();
 }
